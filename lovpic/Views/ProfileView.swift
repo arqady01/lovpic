@@ -23,20 +23,15 @@ struct ProfileView: View {
                     
                     // AI使用统计卡片（横向2个）
                     HStack(spacing: 12) {
-                        StatCard(
-                            icon: "wand.and.stars",
-                            iconColor: Color(red: 1.0, green: 0.4, blue: 0.4),
-                            value: "128",
-                            label: "AI编辑次数",
-                            iconBackground: Color(red: 1.0, green: 0.93, blue: 0.93)
+                        AIUsageCard(
+                            remaining: 180,
+                            total: 200,
+                            label: "剩余用量"
                         )
                         
-                        StatCard(
-                            icon: "folder.fill",
-                            iconColor: Color(red: 0.4, green: 0.6, blue: 1.0),
-                            value: "2.5GB",
-                            label: "存储空间",
-                            iconBackground: Color(red: 0.93, green: 0.95, blue: 1.0)
+                        MembershipDaysCard(
+                            remainingDays: 28,
+                            label: "会员剩余天数"
                         )
                     }
                     .padding(.horizontal, 16)
@@ -112,6 +107,280 @@ struct UserInfoCard: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         )
+    }
+}
+
+// AI使用仪表盘卡片
+struct AIUsageCard: View {
+    let remaining: Int  // 剩余次数
+    let total: Int      // 总次数
+    let label: String
+    
+    var percentage: Double {
+        guard total > 0 else { return 0 }
+        return Double(remaining) / Double(total)
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // 仪表盘
+            ZStack {
+                // 背景灰色刻度
+                GaugeShape(progress: 1.0)
+                    .stroke(
+                        Color.gray.opacity(0.15),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .frame(width: 100, height: 100)
+                
+                // 进度条
+                GaugeShape(progress: percentage)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.45, blue: 0.45),
+                                Color(red: 1.0, green: 0.65, blue: 0.4)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .frame(width: 100, height: 100)
+                
+                // 中间数字
+                VStack(spacing: 2) {
+                    Text("\(remaining)")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(.primary)
+                    
+                    Text("/\(total)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                .offset(y: 8)
+            }
+            .padding(.top, 8)
+            
+            // 标签
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+    }
+}
+
+// 会员剩余天数卡片（滚轮样式）
+struct MembershipDaysCard: View {
+    let remainingDays: Int
+    let label: String
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // 滚轮效果
+            ZStack {
+                // 滚轮容器（3D效果）
+                ZStack {
+                    // 遮罩渐变（上下淡出）
+                    VStack(spacing: 0) {
+                        LinearGradient(
+                            colors: [Color.white, Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 20)
+                        
+                        Spacer()
+                        
+                        LinearGradient(
+                            colors: [Color.clear, Color.white],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 20)
+                    }
+                    .frame(width: 100, height: 95)
+                    
+                    VStack(spacing: 1) {
+                        // 最上方数字（3D旋转+几乎不可见）
+                        Text("\(remainingDays + 3)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.05))
+                            .scaleEffect(0.6)
+                            .rotation3DEffect(
+                                .degrees(-45),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.3
+                            )
+                            .blur(radius: 2)
+                        
+                        // 上方2（3D旋转+非常透明）
+                        Text("\(remainingDays + 2)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.2))
+                            .scaleEffect(0.75)
+                            .rotation3DEffect(
+                                .degrees(-30),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.4
+                            )
+                            .blur(radius: 1.5)
+                        
+                        // 上方1（3D旋转+半透明）
+                        Text("\(remainingDays + 1)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.45))
+                            .scaleEffect(0.85)
+                            .rotation3DEffect(
+                                .degrees(-15),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.5
+                            )
+                            .blur(radius: 0.5)
+                        
+                        // 中间分隔线（上）
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.3),
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.6),
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.3)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 60, height: 1)
+                        
+                        // 当前天数（高亮+无旋转）
+                        Text("\(remainingDays)")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(Color(red: 0.4, green: 0.6, blue: 1.0))
+                            .frame(height: 24)
+                        
+                        // 中间分隔线（下）
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.3),
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.6),
+                                        Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.3)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 60, height: 1)
+                        
+                        // 下方1（3D旋转+半透明）
+                        Text("\(remainingDays - 1)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.45))
+                            .scaleEffect(0.85)
+                            .rotation3DEffect(
+                                .degrees(15),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.5
+                            )
+                            .blur(radius: 0.5)
+                        
+                        // 下方2（3D旋转+非常透明）
+                        Text("\(remainingDays - 2)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.2))
+                            .scaleEffect(0.75)
+                            .rotation3DEffect(
+                                .degrees(30),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.4
+                            )
+                            .blur(radius: 1.5)
+                        
+                        // 最下方数字（3D旋转+几乎不可见）
+                        Text("\(remainingDays - 3)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.05))
+                            .scaleEffect(0.6)
+                            .rotation3DEffect(
+                                .degrees(45),
+                                axis: (x: 1, y: 0, z: 0),
+                                perspective: 0.3
+                            )
+                            .blur(radius: 2)
+                    }
+                    .frame(width: 100, height: 95)
+                }
+                .frame(width: 100, height: 95)
+                .mask(
+                    Rectangle()
+                        .frame(width: 100, height: 95)
+                )
+            }
+            .padding(.top, 12)
+            
+            // 单位标签
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+    }
+}
+
+// 仪表盘形状（半圆弧）
+struct GaugeShape: Shape {
+    let progress: Double
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY + 10)
+        let radius = min(rect.width, rect.height) / 2
+        
+        // 从左侧开始（-180度）到右侧（0度）
+        let startAngle = Angle(degrees: 180)
+        let endAngle = Angle(degrees: 180 + (180 * progress))
+        
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: startAngle,
+            endAngle: endAngle,
+            clockwise: false
+        )
+        
+        return path
+    }
+}
+
+// 刻度线
+struct TickMark: View {
+    let index: Int
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .frame(width: 2, height: index % 3 == 0 ? 12 : 8)
+            .offset(y: -50)
+            .rotationEffect(.degrees(Double(index) * 15 - 90))
     }
 }
 
