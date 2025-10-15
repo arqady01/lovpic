@@ -73,7 +73,6 @@ struct HomeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
-                    HomeTopBar()
                     BannerCarousel(banners: banners, selection: $currentBanner)
                     BannerIndicator(count: banners.count, currentIndex: currentBanner)
                     QuickActionsSection()
@@ -83,58 +82,6 @@ struct HomeView: View {
                 .padding(.bottom, 110)
             }
         }
-    }
-}
-
-private struct HomeTopBar: View {
-    var body: some View {
-        HStack(spacing: 12) {
-            SearchCapsule()
-            CameraButton()
-        }
-    }
-}
-
-private struct SearchCapsule: View {
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
-            Text("大字封面")
-                .font(.system(size: 15, weight: .semibold))
-            Spacer()
-            Image(systemName: "chevron.down")
-                .font(.system(size: 12, weight: .bold))
-        }
-        .foregroundColor(Color(red: 0.42, green: 0.33, blue: 0.28))
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.95))
-        )
-        .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(0.65), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
-    }
-}
-
-private struct CameraButton: View {
-    var body: some View {
-        Button(action: {}) {
-            Image(systemName: "camera.fill")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(Color(red: 0.36, green: 0.29, blue: 0.25))
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(Color.white.opacity(0.95))
-                )
-                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -299,26 +246,13 @@ private struct QuickActionsSection: View {
     ]
 
     var body: some View {
-        LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 16) {
+        LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 24) {
             ForEach(shortcuts) { shortcut in
                 ToolShortcutView(item: shortcut)
             }
         }
-        .padding(.vertical, 24)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 32)
-                .fill(
-                    LinearGradient(colors: [
-                        Color(red: 0.16, green: 0.15, blue: 0.17),
-                        Color(red: 0.05, green: 0.05, blue: 0.06)
-                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 32)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .padding(.vertical, 14)
+        .padding(.horizontal, 6)
     }
 }
 
