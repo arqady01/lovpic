@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     private let backgroundGradient = [
@@ -13,6 +14,56 @@ struct HomeView: View {
         Color(red: 0.96, green: 0.88, blue: 0.78),
         Color(red: 0.26, green: 0.21, blue: 0.18),
         Color(red: 0.07, green: 0.06, blue: 0.06)
+    ]
+
+    @State private var currentBanner = 0
+
+    private let banners: [BannerItem] = [
+        BannerItem(
+            title: "「电商」主图模板",
+            subtitle: "E-commerce main image",
+            cta: "立即使用",
+            imageName: nil,
+            symbolName: "takeoutbag.and.cup.and.straw.fill",
+            backgroundGradient: [
+                Color(red: 0.99, green: 0.95, blue: 0.87),
+                Color(red: 0.96, green: 0.83, blue: 0.67)
+            ],
+            accentColor: Color(red: 0.93, green: 0.58, blue: 0.2),
+            titleColor: Color(red: 0.45, green: 0.29, blue: 0.21),
+            subtitleColor: Color(red: 0.57, green: 0.47, blue: 0.4),
+            ctaGradient: [Color.white, Color(red: 0.95, green: 0.9, blue: 0.82)]
+        ),
+        BannerItem(
+            title: "AI智能设计",
+            subtitle: "智能生成品牌视觉",
+            cta: "立即体验",
+            imageName: nil,
+            symbolName: "sparkles.rectangle.stack.fill",
+            backgroundGradient: [
+                Color(red: 0.94, green: 0.92, blue: 0.99),
+                Color(red: 0.75, green: 0.72, blue: 0.97)
+            ],
+            accentColor: Color(red: 0.49, green: 0.42, blue: 0.96),
+            titleColor: Color(red: 0.32, green: 0.28, blue: 0.6),
+            subtitleColor: Color(red: 0.44, green: 0.4, blue: 0.68),
+            ctaGradient: [Color.white, Color(red: 0.88, green: 0.84, blue: 0.98)]
+        ),
+        BannerItem(
+            title: "节日主图合集",
+            subtitle: "热门节庆一键生成",
+            cta: "查看模板",
+            imageName: nil,
+            symbolName: "giftcard.fill",
+            backgroundGradient: [
+                Color(red: 0.98, green: 0.9, blue: 0.91),
+                Color(red: 0.97, green: 0.76, blue: 0.71)
+            ],
+            accentColor: Color(red: 0.91, green: 0.39, blue: 0.35),
+            titleColor: Color(red: 0.58, green: 0.25, blue: 0.22),
+            subtitleColor: Color(red: 0.61, green: 0.36, blue: 0.32),
+            ctaGradient: [Color.white, Color(red: 0.97, green: 0.88, blue: 0.86)]
+        )
     ]
 
     var body: some View {
@@ -23,8 +74,8 @@ struct HomeView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     HomeTopBar()
-                    HeroSection()
-                    PagerIndicator()
+                    BannerCarousel(banners: banners, selection: $currentBanner)
+                    BannerIndicator(count: banners.count, currentIndex: currentBanner)
                     QuickActionsSection()
                 }
                 .padding(.horizontal, 18)
@@ -87,167 +138,136 @@ private struct CameraButton: View {
     }
 }
 
-private struct HeroSection: View {
+private struct BannerCarousel: View {
+    let banners: [BannerItem]
+    @Binding var selection: Int
+
     var body: some View {
-        GeometryReader { proxy in
-            let cardWidth = (proxy.size.width - 16) / 2
-            HStack(spacing: 16) {
-                HeroTextCard()
-                    .frame(width: cardWidth, height: proxy.size.height)
-                HeroImageCard()
-                    .frame(width: cardWidth, height: proxy.size.height)
+        TabView(selection: $selection) {
+            ForEach(Array(banners.enumerated()), id: \.offset) { pair in
+                BannerCard(banner: pair.element)
+                    .tag(pair.offset)
             }
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(height: 200)
     }
 }
 
-private struct HeroTextCard: View {
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 32)
-                .fill(
-                    LinearGradient(colors: [
-                        Color(red: 0.99, green: 0.94, blue: 0.86),
-                        Color(red: 0.96, green: 0.85, blue: 0.7)
-                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 32)
-                        .stroke(Color.white.opacity(0.62), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
+private struct BannerCard: View {
+    let banner: BannerItem
 
-            VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("「电商」")
-                        .font(.system(size: 24, weight: .heavy))
-                        .foregroundColor(Color(red: 0.5, green: 0.31, blue: 0.2))
-
-                    Text("主图模板")
-                        .font(.system(size: 24, weight: .heavy))
-                        .foregroundColor(Color(red: 0.5, green: 0.31, blue: 0.2))
-
-                    Text("E-commerce\nmain image")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(red: 0.57, green: 0.47, blue: 0.4))
-                }
-
-                Button(action: {}) {
-                    Text("立即使用")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(red: 0.39, green: 0.25, blue: 0.2))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule()
-                                .fill(
-                                    LinearGradient(colors: [
-                                        Color.white,
-                                        Color(red: 0.95, green: 0.9, blue: 0.82)
-                                    ], startPoint: .top, endPoint: .bottom)
-                                )
-                        )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.vertical, 24)
-            .padding(.horizontal, 20)
-        }
-    }
-}
-
-private struct HeroImageCard: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 32)
                 .fill(
-                    LinearGradient(colors: [
-                        Color(red: 0.99, green: 0.93, blue: 0.82),
-                        Color(red: 0.96, green: 0.86, blue: 0.69)
-                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: banner.backgroundGradient,
+                                   startPoint: .topLeading,
+                                   endPoint: .bottomTrailing)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 32)
-                        .stroke(Color.white.opacity(0.58), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.6), lineWidth: 1)
                 )
                 .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
 
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 6) {
-                    Image(systemName: "square.grid.3x3.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(Color(red: 0.61, green: 0.5, blue: 0.32))
-                    Text("美图设计室")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Color(red: 0.53, green: 0.39, blue: 0.22))
+            HStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(banner.title)
+                        .font(.system(size: 22, weight: .heavy))
+                        .foregroundColor(banner.titleColor)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+
+                    Text(banner.subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(banner.subtitleColor)
+                        .lineLimit(2)
+
+                    Button(action: {}) {
+                        Text(banner.cta)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(banner.titleColor)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(colors: banner.ctaGradient,
+                                                       startPoint: .top,
+                                                       endPoint: .bottom)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.7))
-                )
 
                 Spacer(minLength: 0)
 
-                ZStack {
-                    RoundedRectangle(cornerRadius: 22)
-                        .fill(
-                            LinearGradient(colors: [
-                                Color(red: 0.98, green: 0.88, blue: 0.7),
-                                Color(red: 0.98, green: 0.83, blue: 0.62)
-                            ], startPoint: .top, endPoint: .bottom)
-                        )
-
-                    Circle()
-                        .fill(Color.white.opacity(0.6))
-                        .frame(width: 80, height: 80)
-                        .offset(x: -18, y: -16)
-
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(Color.white.opacity(0.45))
-                        .frame(width: 76, height: 36)
-                        .offset(x: 20, y: 26)
-
-                    Image(systemName: "takeoutbag.and.cup.and.straw.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(Color(red: 0.95, green: 0.68, blue: 0.2))
-                        .shadow(color: Color.black.opacity(0.15), radius: 10, x: 4, y: 8)
-                }
-                .frame(height: 132)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("活动季手价")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color(red: 0.55, green: 0.4, blue: 0.23))
-
-                    Text("¥ XX 起/幅")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(Color(red: 0.85, green: 0.38, blue: 0.21))
-
-                    Text("干净配方 原果鲜榨")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(red: 0.55, green: 0.4, blue: 0.23))
-                }
+                BannerImageView(banner: banner)
             }
-            .padding(18)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 24)
+        }
+        .padding(.horizontal, 2)
+    }
+}
+
+private struct BannerImageView: View {
+    let banner: BannerItem
+    private let imageSize: CGFloat = 116
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 26)
+                .fill(
+                    LinearGradient(colors: [
+                        banner.accentColor.opacity(0.2),
+                        banner.accentColor.opacity(0.1)
+                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+
+            contentImage
+        }
+        .frame(width: imageSize, height: imageSize)
+        .clipShape(RoundedRectangle(cornerRadius: 26))
+        .overlay(
+            RoundedRectangle(cornerRadius: 26)
+                .stroke(Color.white.opacity(0.25), lineWidth: 1)
+        )
+        .shadow(color: banner.accentColor.opacity(0.25), radius: 10, x: 0, y: 8)
+    }
+
+    @ViewBuilder
+    private var contentImage: some View {
+        if let name = banner.imageName, let uiImage = UIImage(named: name) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: imageSize, height: imageSize)
+                .clipped()
+        } else {
+            Image(systemName: banner.symbolName)
+                .resizable()
+                .scaledToFit()
+                .padding(26)
+                .foregroundColor(banner.accentColor)
         }
     }
 }
 
-private struct PagerIndicator: View {
+private struct BannerIndicator: View {
+    let count: Int
+    let currentIndex: Int
+
     var body: some View {
         HStack(spacing: 6) {
-            Capsule()
-                .fill(Color.white)
-                .frame(width: 22, height: 5)
-
-            Capsule()
-                .fill(Color.white.opacity(0.35))
-                .frame(width: 12, height: 5)
+            ForEach(0..<max(count, 1), id: \.self) { index in
+                Capsule()
+                    .fill(index == currentIndex ? Color.white : Color.white.opacity(0.35))
+                    .frame(width: index == currentIndex ? 22 : 12, height: 5)
+                    .animation(.easeInOut(duration: 0.25), value: currentIndex)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 4)
@@ -354,6 +374,20 @@ private struct ShortcutBadgeView: View {
             )
             .shadow(color: badge.background.opacity(0.35), radius: 6, x: 0, y: 3)
     }
+}
+
+private struct BannerItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let cta: String
+    let imageName: String?
+    let symbolName: String
+    let backgroundGradient: [Color]
+    let accentColor: Color
+    let titleColor: Color
+    let subtitleColor: Color
+    let ctaGradient: [Color]
 }
 
 private struct ToolShortcutItem: Identifiable {
