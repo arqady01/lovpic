@@ -67,20 +67,24 @@ struct HomeView: View {
     ]
 
     var body: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(colors: backgroundGradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack(alignment: .top) {
+                LinearGradient(colors: backgroundGradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    BannerCarousel(banners: banners, selection: $currentBanner)
-                    BannerIndicator(count: banners.count, currentIndex: currentBanner)
-                    QuickActionsSection()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        BannerCarousel(banners: banners, selection: $currentBanner)
+                        BannerIndicator(count: banners.count, currentIndex: currentBanner)
+                        QuickActionsSection()
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 22)
+                    .padding(.bottom, 110)
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 22)
-                .padding(.bottom, 110)
             }
+            .navigationTitle("")
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
@@ -131,7 +135,9 @@ private struct BannerCard: View {
                         .foregroundColor(banner.subtitleColor)
                         .lineLimit(2)
 
-                    Button(action: {}) {
+                    NavigationLink {
+                        FeaturePlaceholderView(title: banner.title)
+                    } label: {
                         Text(banner.cta)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(banner.titleColor)
@@ -248,7 +254,12 @@ private struct QuickActionsSection: View {
     var body: some View {
         LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 24) {
             ForEach(shortcuts) { shortcut in
-                ToolShortcutView(item: shortcut)
+                NavigationLink {
+                    FeaturePlaceholderView(title: shortcut.title)
+                } label: {
+                    ToolShortcutView(item: shortcut)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.vertical, 14)
@@ -336,6 +347,29 @@ private struct ShortcutBadge {
     let text: String
     let background: Color
     let foreground: Color
+}
+
+private struct FeaturePlaceholderView: View {
+    let title: String
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(.secondary)
+
+            Text(title)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.primary)
+
+            Text("该功能正在建设中，敬请期待。")
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
+        .ignoresSafeArea()
+    }
 }
 
 #Preview {
