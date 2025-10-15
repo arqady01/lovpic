@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ProfileView: View {
     var body: some View {
@@ -507,20 +508,10 @@ struct VIPCard: View {
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.9))
             }
-            
+
             Spacer()
-            
-            Button(action: {}) {
-                Text("立即升级")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.4))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.white)
-                    )
-            }
+
+            UIKitUpgradeButton(title: "立即升级") {}
         }
         .padding(20)
         .background(
@@ -537,6 +528,103 @@ struct VIPCard: View {
                 )
                 .shadow(color: Color.orange.opacity(0.3), radius: 12, x: 0, y: 6)
         )
+    }
+}
+
+struct UIKitUpgradeButton: UIViewRepresentable {
+    var title: String
+    var tapAction: (() -> Void)?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIButton {
+        let button: UIButton
+        if #available(iOS 15.0, *) {
+            button = UIButton(configuration: configuredButton(), primaryAction: nil)
+        } else {
+            let legacyButton = UIButton(type: .system)
+            legacyButton.setTitle(title, for: .normal)
+            legacyButton.setTitleColor(accentUIColor, for: .normal)
+            legacyButton.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+            legacyButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 24, bottom: 10, right: 24)
+            legacyButton.adjustsImageWhenHighlighted = false
+            button = legacyButton
+        }
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.layer.masksToBounds = false
+        button.layer.shadowColor = accentUIColor.withAlphaComponent(0.35).cgColor
+        button.layer.shadowOpacity = 0
+        button.layer.shadowRadius = 14
+        button.layer.shadowOffset = CGSize(width: 0, height: 6)
+        button.addTarget(context.coordinator, action: #selector(Coordinator.handleTap(_:)), for: .touchUpInside)
+        context.coordinator.tapAction = tapAction
+        return button
+    }
+
+    func updateUIView(_ uiView: UIButton, context: Context) {
+        if #available(iOS 15.0, *) {
+            uiView.configuration = configuredButton()
+        } else {
+            uiView.setTitle(title, for: .normal)
+            uiView.setTitleColor(accentUIColor, for: .normal)
+            uiView.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+            uiView.contentEdgeInsets = UIEdgeInsets(top: 10, left: 24, bottom: 10, right: 24)
+        }
+        context.coordinator.tapAction = tapAction
+    }
+
+    private var accentUIColor: UIColor {
+        UIColor(red: 1.0, green: 0.5, blue: 0.4, alpha: 1.0)
+    }
+
+    @available(iOS 15.0, *)
+    private func configuredButton() -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = title
+        configuration.baseForegroundColor = accentUIColor
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 24, bottom: 10, trailing: 24)
+        configuration.background.backgroundColor = .white
+        configuration.background.cornerRadius = 20
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+            return outgoing
+        }
+        return configuration
+    }
+
+    class Coordinator: NSObject {
+        var tapAction: (() -> Void)?
+        private var isAnimating = false
+
+        @objc func handleTap(_ sender: UIButton) {
+            guard !isAnimating else { return }
+            isAnimating = true
+
+            let feedback = UIImpactFeedbackGenerator(style: .medium)
+            feedback.prepare()
+            feedback.impactOccurred()
+
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                sender.transform = CGAffineTransform(scaleX: 0.92, y: 0.92)
+                sender.layer.shadowOpacity = 1
+            } completion: { _ in
+                UIView.animate(withDuration: 0.32,
+                               delay: 0,
+                               usingSpringWithDamping: 0.55,
+                               initialSpringVelocity: 3.5,
+                               options: [.allowUserInteraction, .beginFromCurrentState]) {
+                    sender.transform = .identity
+                    sender.layer.shadowOpacity = 0
+                } completion: { _ in
+                    self.isAnimating = false
+                    self.tapAction?()
+                }
+            }
+        }
     }
 }
 
@@ -685,4 +773,3 @@ struct ProfileMenuItem: View {
 #Preview {
     ProfileView()
 }
-
