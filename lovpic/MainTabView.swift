@@ -10,6 +10,7 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab: TabItem = .home
     @State private var homeDetailActive = false
+    @State private var toolsDetailActive = false
 
     var body: some View {
         ZStack {
@@ -23,7 +24,7 @@ struct MainTabView: View {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
                 case .tools:
-                    ToolsView()
+                    ToolsView(isPresentingDetail: $toolsDetailActive)
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.9).combined(with: .opacity),
                             removal: .scale(scale: 0.9).combined(with: .opacity)
@@ -42,14 +43,17 @@ struct MainTabView: View {
             VStack {
                 Spacer()
                 LiquidGlassTabBar(selectedTab: $selectedTab)
-                    .opacity(homeDetailActive ? 0 : 1)
-                    .allowsHitTesting(!homeDetailActive)
+                    .opacity((homeDetailActive || toolsDetailActive) ? 0 : 1)
+                    .allowsHitTesting(!(homeDetailActive || toolsDetailActive))
             }
             .ignoresSafeArea(edges: .bottom)
         }
-        .onChange(of: selectedTab) { newValue in
+        .onChange(of: selectedTab) { _, newValue in
             if newValue != .home {
                 homeDetailActive = false
+            }
+            if newValue != .tools {
+                toolsDetailActive = false
             }
         }
     }

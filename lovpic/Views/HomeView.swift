@@ -92,8 +92,8 @@ struct HomeView: View {
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
-        .onChange(of: navigationPath) { path in
-            isPresentingDetail = !path.isEmpty
+        .onChange(of: navigationPath) { _, newValue in
+            isPresentingDetail = !newValue.isEmpty
         }
         .onAppear { isPresentingDetail = false }
     }

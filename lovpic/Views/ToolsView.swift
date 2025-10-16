@@ -8,7 +8,11 @@
 import SwiftUI
 
 struct ToolsView: View {
-    let tools = [
+    private enum Destination: Hashable {
+        case imageEnhancement
+    }
+    
+    private let tools = [
         ToolItem(
             icon: "wand.and.stars",
             title: "画质增强",
@@ -65,45 +69,74 @@ struct ToolsView: View {
         )
     ]
     
+    @Binding private var isPresentingDetail: Bool
+    @State private var navigationPath: [Destination] = []
+    
+    init(isPresentingDetail: Binding<Bool> = .constant(false)) {
+        _isPresentingDetail = isPresentingDetail
+    }
+    
     var body: some View {
-        ZStack {
-            // 纯色背景
-            Color(red: 0.97, green: 0.97, blue: 0.99)
-                .ignoresSafeArea()
-            
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    // 头部标题区域
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("工具箱")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(red: 1, green: 0.76, blue: 0.02))
-                        
-                        Text("场景免费，零门槛、更好用")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 16)
-                    
-                    // 工具网格 - 3列布局
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 12),
-                            GridItem(.flexible(), spacing: 12),
-                            GridItem(.flexible(), spacing: 12)
-                        ],
-                        spacing: 16
-                    ) {
-                        ForEach(tools) { tool in
-                            ToolCard(tool: tool)
+        NavigationStack(path: $navigationPath) {
+            ZStack {
+                // 纯色背景
+                Color(red: 0.97, green: 0.97, blue: 0.99)
+                    .ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        // 头部标题区域
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("工具箱")
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 1, green: 0.76, blue: 0.02))
+                            
+                            Text("场景免费，零门槛、更好用")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.secondary)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 16)
+                        
+                        // 工具网格 - 3列布局
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ],
+                            spacing: 16
+                        ) {
+                            ForEach(tools) { tool in
+                                ToolCard(tool: tool) {
+                                    handleSelection(of: tool)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 120) // 为底部导航留出空间
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 120) // 为底部导航留出空间
                 }
             }
+            .navigationDestination(for: Destination.self) { destination in
+                switch destination {
+                case .imageEnhancement:
+                    ImageEnhancementView()
+                }
+            }
+            .onChange(of: navigationPath) { _, newValue in
+                isPresentingDetail = !newValue.isEmpty
+            }
+            .onAppear {
+                isPresentingDetail = !navigationPath.isEmpty
+            }
+        }
+    }
+    
+    private func handleSelection(of tool: ToolItem) {
+        if tool.title == "画质增强" {
+            navigationPath.append(.imageEnhancement)
         }
     }
 }
@@ -120,6 +153,7 @@ struct ToolItem: Identifiable {
 // 工具卡片组件
 struct ToolCard: View {
     let tool: ToolItem
+    let onTap: () -> Void
     @State private var isPressed = false
     
     var body: some View {
@@ -136,7 +170,7 @@ struct ToolCard: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     isPressed = false
                 }
-                // 这里后续可以导航到二级页面
+                onTap()
             }
         }) {
             VStack(spacing: 10) {
