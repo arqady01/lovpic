@@ -66,37 +66,56 @@ struct HomeView: View {
         )
     ]
 
+    @Binding var isPresentingDetail: Bool
+    @State private var navigationPath: [FeatureDestination] = []
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack(alignment: .top) {
                 LinearGradient(colors: backgroundGradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
-                        BannerCarousel(banners: banners, selection: $currentBanner)
+                        BannerCarousel(banners: banners, selection: $currentBanner, onSelect: openBanner)
                         BannerIndicator(count: banners.count, currentIndex: currentBanner)
-                        QuickActionsSection()
+                        QuickActionsSection(onSelect: openShortcut)
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 22)
                     .padding(.bottom, 110)
                 }
             }
-            .navigationTitle("")
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: FeatureDestination.self) { destination in
+                FeaturePlaceholderView(title: destination.title)
+                    .navigationTitle(destination.title)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
         }
+        .onChange(of: navigationPath) { path in
+            isPresentingDetail = !path.isEmpty
+        }
+        .onAppear { isPresentingDetail = false }
+    }
+
+    private func openBanner(_ banner: BannerItem) {
+        navigationPath.append(FeatureDestination(title: banner.title))
+    }
+
+    private func openShortcut(_ shortcut: ToolShortcutItem) {
+        navigationPath.append(FeatureDestination(title: shortcut.title))
     }
 }
 
 private struct BannerCarousel: View {
     let banners: [BannerItem]
     @Binding var selection: Int
+    let onSelect: (BannerItem) -> Void
 
     var body: some View {
         TabView(selection: $selection) {
             ForEach(Array(banners.enumerated()), id: \.offset) { pair in
-                BannerCard(banner: pair.element)
+                BannerCard(banner: pair.element, onCTA: onSelect)
                     .tag(pair.offset)
             }
         }
@@ -107,6 +126,7 @@ private struct BannerCarousel: View {
 
 private struct BannerCard: View {
     let banner: BannerItem
+    let onCTA: (BannerItem) -> Void
 
     var body: some View {
         ZStack {
@@ -135,9 +155,7 @@ private struct BannerCard: View {
                         .foregroundColor(banner.subtitleColor)
                         .lineLimit(2)
 
-                    NavigationLink {
-                        FeaturePlaceholderView(title: banner.title)
-                    } label: {
+                    Button(action: { onCTA(banner) }) {
                         Text(banner.cta)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(banner.titleColor)
@@ -251,12 +269,12 @@ private struct QuickActionsSection: View {
         ToolShortcutItem(title: "人像背景", icon: "person.crop.rectangle", accent: Color.white, badge: nil)
     ]
 
+    let onSelect: (ToolShortcutItem) -> Void
+
     var body: some View {
         LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 24) {
             ForEach(shortcuts) { shortcut in
-                NavigationLink {
-                    FeaturePlaceholderView(title: shortcut.title)
-                } label: {
+                Button(action: { onSelect(shortcut) }) {
                     ToolShortcutView(item: shortcut)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -349,6 +367,11 @@ private struct ShortcutBadge {
     let foreground: Color
 }
 
+private struct FeatureDestination: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+}
+
 private struct FeaturePlaceholderView: View {
     let title: String
 
@@ -373,5 +396,5 @@ private struct FeaturePlaceholderView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(isPresentingDetail: .constant(false))
 }

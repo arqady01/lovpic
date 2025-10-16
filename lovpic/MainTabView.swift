@@ -9,14 +9,15 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab: TabItem = .home
-    
+    @State private var homeDetailActive = false
+
     var body: some View {
         ZStack {
             // 主内容区域
             Group {
                 switch selectedTab {
                 case .home:
-                    HomeView()
+                    HomeView(isPresentingDetail: $homeDetailActive)
                         .transition(.asymmetric(
                             insertion: .move(edge: .leading).combined(with: .opacity),
                             removal: .move(edge: .trailing).combined(with: .opacity)
@@ -41,8 +42,15 @@ struct MainTabView: View {
             VStack {
                 Spacer()
                 LiquidGlassTabBar(selectedTab: $selectedTab)
+                    .opacity(homeDetailActive ? 0 : 1)
+                    .allowsHitTesting(!homeDetailActive)
             }
             .ignoresSafeArea(edges: .bottom)
+        }
+        .onChange(of: selectedTab) { newValue in
+            if newValue != .home {
+                homeDetailActive = false
+            }
         }
     }
 }
@@ -50,4 +58,3 @@ struct MainTabView: View {
 #Preview {
     MainTabView()
 }
-
