@@ -249,9 +249,24 @@ private struct QuickActionsSection: View {
     private let shortcutColumns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
 
     private let shortcuts: [ToolShortcutItem] = [
-        ToolShortcutItem(title: "画质修复", icon: "waveform", accent: Color.white, badge: nil),
-        ToolShortcutItem(title: "智能抠图", icon: "lasso.and.sparkles", accent: Color.white, badge: nil),
-        ToolShortcutItem(title: "AI消除", icon: "eraser.fill", accent: Color.white, badge: nil),
+        ToolShortcutItem(
+            title: "文生图",
+            icon: "wand.and.sparkles.inverse",
+            accent: Color.white,
+            badge: nil
+        ),
+        ToolShortcutItem(
+            title: "智能抠图",
+            icon: "lasso.and.sparkles",
+            accent: Color.white,
+            badge: ShortcutBadge(text: "AI", background: Color(red: 0.96, green: 0.51, blue: 0.12), foreground: .white)
+        ),
+        ToolShortcutItem(
+            title: "AI消除",
+            icon: "eraser.fill",
+            accent: Color.white,
+            badge: nil
+        ),
         ToolShortcutItem(
             title: "AI设计",
             icon: "star.square.fill",

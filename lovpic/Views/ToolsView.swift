@@ -15,9 +15,9 @@ struct ToolsView: View {
     
     private let tools = [
         ToolItem(
-            icon: "wand.and.stars",
+            icon: "eye.trianglebadge.exclamationmark",
             title: "画质增强",
-            description: "智能提升画质",
+            description: "算法提升画质",
             color: Color(red: 0.65, green: 0.37, blue: 0.90)
         ),
         ToolItem(
@@ -33,9 +33,9 @@ struct ToolsView: View {
             color: Color(red: 1.0, green: 0.44, blue: 0.66)
         ),
         ToolItem(
-            icon: "paintbrush.fill",
-            title: "画笔工具",
-            description: "自由创作涂鸦",
+            icon: "environments.slash.circle",
+            title: "传统抠图",
+            description: "抠图又快又准",
             color: Color(red: 1.0, green: 0.57, blue: 0.27)
         ),
         ToolItem(

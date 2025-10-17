@@ -146,7 +146,7 @@ struct FramedScreenshotView: View {
     private var previewSection: some View {
         if let template = selectedTemplate {
             VStack(alignment: .leading, spacing: 12) {
-                Text("模板预览")
+                Text("预览")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
                 
@@ -168,7 +168,7 @@ struct FramedScreenshotView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 .shadow(color: Color.black.opacity(0.08), radius: 16, x: 0, y: 8)
                 
-                Text("提示：点击上方手机屏幕区域，选择需要合成的照片。")
+                Text("提示：点击上方手机屏幕区域，选择需要合成的照片")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                 
