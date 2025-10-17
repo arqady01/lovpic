@@ -12,6 +12,27 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import Photos
 
+private enum FrameCompositionMode: String, CaseIterable, Identifiable {
+    case fill
+    case fit
+    
+    var id: String { rawValue }
+    
+    var title: String {
+        switch self {
+        case .fill: return "铺满"
+        case .fit: return "完整显示"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .fill: return "按比例裁剪后铺满屏幕"
+        case .fit: return "按比例缩放并完整显示"
+        }
+    }
+}
+
 struct FramedScreenshotView: View {
     @State private var templates: [FrameTemplate] = []
     @State private var selectedTemplate: FrameTemplate?
@@ -27,6 +48,7 @@ struct FramedScreenshotView: View {
     @State private var isSaving = false
     @State private var saveMessage: String?
     @State private var saveMessageIsError = false
+    @State private var compositionMode: FrameCompositionMode = .fill
     
     var body: some View {
         ScrollView {
@@ -55,6 +77,9 @@ struct FramedScreenshotView: View {
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
             loadUserImage(from: newItem)
+        }
+        .onChange(of: compositionMode) { _, _ in
+            composeIfNeeded()
         }
     }
     
@@ -147,6 +172,8 @@ struct FramedScreenshotView: View {
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                 
+                modePicker
+                
                 if let selectionError {
                     Text(selectionError)
                         .font(.system(size: 13))
@@ -160,6 +187,21 @@ struct FramedScreenshotView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private var modePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("合成模式", selection: $compositionMode) {
+                ForEach(FrameCompositionMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            
+            Text(compositionMode.description)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         }
     }
     
@@ -287,8 +329,9 @@ struct FramedScreenshotView: View {
         isCompositing = true
         processingError = nil
         
+        let mode = compositionMode
         Task.detached(priority: .userInitiated) {
-            let result = FrameComposer.compose(userImage: userImage, with: template)
+            let result = FrameComposer.compose(userImage: userImage, with: template, mode: mode)
             await MainActor.run {
                 self.framedImage = result
                 self.isCompositing = false
@@ -647,7 +690,7 @@ private enum FrameTemplateLoader {
 private enum FrameComposer {
     private static let context = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
     
-    static func compose(userImage: UIImage, with template: FrameTemplate) -> UIImage? {
+    static func compose(userImage: UIImage, with template: FrameTemplate, mode: FrameCompositionMode) -> UIImage? {
         guard let templateCI = ciImage(from: template.image),
               var userCI = ciImage(from: userImage) else {
             return nil
@@ -655,7 +698,12 @@ private enum FrameComposer {
         
         let quad = template.config.screenQuad
         let targetAspect = quad.averagedAspectRatio()
-        userCI = crop(image: userCI, toAspectRatio: targetAspect)
+        switch mode {
+        case .fill:
+            userCI = crop(image: userCI, toAspectRatio: targetAspect)
+        case .fit:
+            userCI = pad(image: userCI, toAspectRatio: targetAspect)
+        }
         
         let templateExtent = templateCI.extent
         let widthScale = template.config.templateWidth == 0 ? 1 : templateExtent.width / template.config.templateWidth
@@ -740,6 +788,42 @@ private enum FrameComposer {
         let cropped = image.cropped(to: cropRect)
         let translated = cropped.transformed(by: CGAffineTransform(translationX: -cropRect.origin.x, y: -cropRect.origin.y))
         return translated
+    }
+    
+    private static func pad(image: CIImage, toAspectRatio targetAspect: CGFloat) -> CIImage {
+        guard targetAspect > 0 else {
+            return image
+        }
+        
+        let standardized = image.transformed(by: CGAffineTransform(translationX: -image.extent.origin.x, y: -image.extent.origin.y))
+        let extent = standardized.extent
+        let currentAspect = extent.width / max(extent.height, 1)
+        
+        if abs(currentAspect - targetAspect) <= 0.01 {
+            return standardized
+        }
+        
+        var newWidth = extent.width
+        var newHeight = extent.height
+        
+        if currentAspect > targetAspect {
+            newHeight = extent.width / targetAspect
+        } else {
+            newWidth = extent.height * targetAspect
+        }
+        
+        let deltaX = (newWidth - extent.width) / 2
+        let deltaY = (newHeight - extent.height) / 2
+        
+        let translated = standardized.transformed(by: CGAffineTransform(translationX: deltaX, y: deltaY))
+        let backgroundColor = CIColor(red: 0, green: 0, blue: 0, alpha: 0)
+        let background = CIImage(color: backgroundColor).cropped(to: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        
+        let compositor = CIFilter.sourceOverCompositing()
+        compositor.inputImage = translated
+        compositor.backgroundImage = background
+        
+        return compositor.outputImage ?? translated
     }
 }
 
