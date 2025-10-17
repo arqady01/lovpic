@@ -10,6 +10,7 @@ import SwiftUI
 struct ToolsView: View {
     private enum Destination: Hashable {
         case imageEnhancement
+        case framedScreenshot
     }
     
     private let tools = [
@@ -20,9 +21,9 @@ struct ToolsView: View {
             color: Color(red: 0.65, green: 0.37, blue: 0.90)
         ),
         ToolItem(
-            icon: "crop.rotate",
-            title: "裁剪旋转",
-            description: "灵活调整尺寸",
+            icon: "square.2.layers.3d.top.filled",
+            title: "带壳截图",
+            description: "让截图娱乐化",
             color: Color(red: 0.3, green: 0.68, blue: 1.0)
         ),
         ToolItem(
@@ -123,6 +124,8 @@ struct ToolsView: View {
                 switch destination {
                 case .imageEnhancement:
                     ImageEnhancementView()
+                case .framedScreenshot:
+                    FramedScreenshotView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -135,8 +138,13 @@ struct ToolsView: View {
     }
     
     private func handleSelection(of tool: ToolItem) {
-        if tool.title == "画质增强" {
+        switch tool.title {
+        case "画质增强":
             navigationPath.append(.imageEnhancement)
+        case "带壳截图":
+            navigationPath.append(.framedScreenshot)
+        default:
+            break
         }
     }
 }
