@@ -11,6 +11,7 @@ struct ToolsView: View {
     private enum Destination: Hashable {
         case imageEnhancement
         case framedScreenshot
+        case backgroundRemoval
     }
     
     private let tools = [
@@ -126,6 +127,8 @@ struct ToolsView: View {
                     ImageEnhancementView()
                 case .framedScreenshot:
                     FramedScreenshotView()
+                case .backgroundRemoval:
+                    BackgroundRemovalView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -143,6 +146,8 @@ struct ToolsView: View {
             navigationPath.append(.imageEnhancement)
         case "带壳截图":
             navigationPath.append(.framedScreenshot)
+        case "传统抠图":
+            navigationPath.append(.backgroundRemoval)
         default:
             break
         }
