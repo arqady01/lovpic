@@ -12,6 +12,7 @@ struct ToolsView: View {
         case imageEnhancement
         case framedScreenshot
         case backgroundRemoval
+        case imageStitching
     }
     
     private let tools = [
@@ -20,6 +21,12 @@ struct ToolsView: View {
             title: "画质增强",
             description: "算法提升画质",
             color: Color(red: 0.65, green: 0.37, blue: 0.90)
+        ),
+        ToolItem(
+            icon: "square.split.2x1",
+            title: "拼接图片",
+            description: "竖向拼接九宫图",
+            color: Color(red: 0.31, green: 0.62, blue: 0.98)
         ),
         ToolItem(
             icon: "square.2.layers.3d.top.filled",
@@ -44,12 +51,6 @@ struct ToolsView: View {
             title: "文字标注",
             description: "添加精美文字",
             color: Color(red: 0.3, green: 0.83, blue: 0.45)
-        ),
-        ToolItem(
-            icon: "square.on.square",
-            title: "拼图模板",
-            description: "创意照片拼图",
-            color: Color(red: 0.45, green: 0.44, blue: 0.90)
         ),
         ToolItem(
             icon: "photo.on.rectangle.angled",
@@ -129,6 +130,8 @@ struct ToolsView: View {
                     FramedScreenshotView()
                 case .backgroundRemoval:
                     BackgroundRemovalView()
+                case .imageStitching:
+                    ImageStitchingView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -144,6 +147,8 @@ struct ToolsView: View {
         switch tool.title {
         case "画质增强":
             navigationPath.append(.imageEnhancement)
+        case "拼接图片":
+            navigationPath.append(.imageStitching)
         case "带壳截图":
             navigationPath.append(.framedScreenshot)
         case "传统抠图":
