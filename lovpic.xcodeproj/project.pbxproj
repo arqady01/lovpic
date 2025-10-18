@@ -400,6 +400,7 @@
 				DEVELOPMENT_TEAM = ZJD3M39YHC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要访问摄像头以识别实景中的物体。";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "允许保存处理后的图片到系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问您的照片以选择并保存处理后的图片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -431,6 +432,7 @@
 				DEVELOPMENT_TEAM = ZJD3M39YHC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要访问摄像头以识别实景中的物体。";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "允许保存处理后的图片到系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问您的照片以选择并保存处理后的图片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

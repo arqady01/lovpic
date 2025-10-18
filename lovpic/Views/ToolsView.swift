@@ -13,6 +13,7 @@ struct ToolsView: View {
         case framedScreenshot
         case backgroundRemoval
         case imageStitching
+        case realTimeRecognition
     }
     
     private let tools = [
@@ -54,8 +55,8 @@ struct ToolsView: View {
         ),
         ToolItem(
             icon: "photo.on.rectangle.angled",
-            title: "背景虚化",
-            description: "专业景深效果",
+            title: "码住安全",
+            description: "守护照片隐私安全",
             color: Color(red: 0.1, green: 0.80, blue: 0.88)
         ),
         ToolItem(
@@ -132,6 +133,8 @@ struct ToolsView: View {
                     BackgroundRemovalView()
                 case .imageStitching:
                     ImageStitchingView()
+                case .realTimeRecognition:
+                    RealTimeRecognitionView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -153,6 +156,8 @@ struct ToolsView: View {
             navigationPath.append(.framedScreenshot)
         case "传统抠图":
             navigationPath.append(.backgroundRemoval)
+        case "实景识别":
+            navigationPath.append(.realTimeRecognition)
         default:
             break
         }
