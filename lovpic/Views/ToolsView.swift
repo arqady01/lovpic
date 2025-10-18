@@ -14,6 +14,7 @@ struct ToolsView: View {
         case backgroundRemoval
         case imageStitching
         case realTimeRecognition
+        case safeCode
     }
     
     private let tools = [
@@ -135,6 +136,8 @@ struct ToolsView: View {
                     ImageStitchingView()
                 case .realTimeRecognition:
                     RealTimeRecognitionView()
+                case .safeCode:
+                    SafeCodeView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -158,6 +161,8 @@ struct ToolsView: View {
             navigationPath.append(.backgroundRemoval)
         case "实景识别":
             navigationPath.append(.realTimeRecognition)
+        case "码住安全":
+            navigationPath.append(.safeCode)
         default:
             break
         }
