@@ -11,6 +11,7 @@ import Vision
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import Photos
+import Foundation
 
 struct SafeCodeView: View {
     @State private var selectedItem: PhotosPickerItem?
@@ -19,13 +20,45 @@ struct SafeCodeView: View {
     @State private var isProcessing = false
     @State private var processingMessage: String?
     @State private var processingMessageIsError = false
-    @State private var detectionCount: Int = 0
+    @State private var barcodeCount: Int = 0
+    @State private var sensitiveTextCount: Int = 0
     @State private var isComparing = false
     @State private var isSaving = false
     @State private var saveMessage: String?
     @State private var saveMessageIsError = false
 
     private let mosaicScale: CGFloat = 40
+    private let sensitiveRules = SensitiveContentRuleSet.default
+    
+    private var hasMaskedContent: Bool {
+        (barcodeCount + sensitiveTextCount) > 0
+    }
+    
+    private var maskedSummaryText: String? {
+        let parts = maskedComponents(barcodeCount: barcodeCount, textCount: sensitiveTextCount)
+        guard !parts.isEmpty else { return nil }
+        return "已打码：" + parts.joined(separator: "、")
+    }
+    
+    private func successSummary(barcodeCount: Int, textCount: Int) -> String {
+        let components = maskedComponents(barcodeCount: barcodeCount, textCount: textCount)
+        if components.isEmpty {
+            return "未检测到条码、二维码或敏感文字，原图未做改动。"
+        }
+        
+        return "已为 " + components.joined(separator: "、") + " 添加马赛克。"
+    }
+    
+    private func maskedComponents(barcodeCount: Int, textCount: Int) -> [String] {
+        var parts: [String] = []
+        if barcodeCount > 0 {
+            parts.append("\(barcodeCount) 个条码/二维码")
+        }
+        if textCount > 0 {
+            parts.append("\(textCount) 处敏感文字")
+        }
+        return parts
+    }
 
     var body: some View {
         ScrollView {
@@ -74,7 +107,7 @@ struct SafeCodeView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.primary)
 
-                        Text("自动识别条码并添加马赛克")
+                        Text("自动识别条码 / 敏感文字并添加马赛克")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -133,11 +166,11 @@ struct SafeCodeView: View {
                 .foregroundColor(processingMessageIsError ? .red : .secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else if isProcessing {
-            Text("正在识别条码并添加马赛克...")
+            Text("正在识别隐私信息并添加马赛克...")
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        } else if processedImage != nil && detectionCount > 0 {
+        } else if processedImage != nil && hasMaskedContent {
             Text("提示：按住右下角的对比按钮可以查看原图。")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
@@ -170,14 +203,20 @@ struct SafeCodeView: View {
                 .disabled(isSaving)
                 .opacity(isSaving ? 0.7 : 1.0)
 
+                if let summaryText = maskedSummaryText {
+                    Text(summaryText)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+
                 if let saveMessage {
                     Text(saveMessage)
                         .font(.system(size: 12))
                         .foregroundColor(saveMessageIsError ? .red : .green)
                 }
 
-                if detectionCount == 0 {
-                    Text("没有检测到条码或二维码，原图保持不变。")
+                if !hasMaskedContent {
+                    Text("没有检测到条码、二维码或敏感文字，原图保持不变。")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -204,7 +243,8 @@ struct SafeCodeView: View {
                     processingMessageIsError = true
                     originalImage = nil
                     processedImage = nil
-                    detectionCount = 0
+                    barcodeCount = 0
+                    sensitiveTextCount = 0
                 }
                 return
             }
@@ -214,7 +254,8 @@ struct SafeCodeView: View {
             await MainActor.run {
                 originalImage = normalizedImage
                 processedImage = nil
-                detectionCount = 0
+                barcodeCount = 0
+                sensitiveTextCount = 0
                 processingMessage = nil
                 processingMessageIsError = false
                 saveMessage = nil
@@ -228,8 +269,11 @@ struct SafeCodeView: View {
     }
 
     private func runProcessing(on image: UIImage) {
+        let rules = sensitiveRules
         Task.detached(priority: .userInitiated) {
-            let result = BarcodePrivacyProcessor.process(image: image, mosaicScale: mosaicScale)
+            let result = PrivacyMaskProcessor.process(image: image,
+                                                      mosaicScale: mosaicScale,
+                                                      rules: rules)
             await MainActor.run {
                 self.isProcessing = false
                 self.saveMessage = nil
@@ -238,18 +282,15 @@ struct SafeCodeView: View {
                 switch result {
                 case .success(let output):
                     self.processedImage = output.image
-                    self.detectionCount = output.count
-
-                    if output.count > 0 {
-                        self.processingMessage = "已为 \(output.count) 个条码/二维码添加马赛克。"
-                        self.processingMessageIsError = false
-                    } else {
-                        self.processingMessage = "未检测到条码或二维码，原图未做改动。"
-                        self.processingMessageIsError = false
-                    }
+                    self.barcodeCount = output.barcodeCount
+                    self.sensitiveTextCount = output.sensitiveTextCount
+                    self.processingMessage = successSummary(barcodeCount: output.barcodeCount,
+                                                            textCount: output.sensitiveTextCount)
+                    self.processingMessageIsError = false
                 case .failure(let error):
                     self.processedImage = nil
-                    self.detectionCount = 0
+                    self.barcodeCount = 0
+                    self.sensitiveTextCount = 0
                     self.processingMessage = error.localizedDescription
                     self.processingMessageIsError = true
                 }
@@ -323,7 +364,7 @@ struct SafeCodeView: View {
                 } else if success {
                     continuation.resume(returning: ())
                 } else {
-                    continuation.resume(throwing: BarcodeProcessingError.saveFailed)
+                    continuation.resume(throwing: PrivacyProcessingError.saveFailed)
                 }
             })
         }
@@ -363,82 +404,204 @@ private struct ProcessingOverlay: View {
     }
 }
 
-private enum BarcodePrivacyProcessor {
+private enum PrivacyMaskProcessor {
     struct Output {
         let image: UIImage
-        let count: Int
+        let barcodeCount: Int
+        let sensitiveTextCount: Int
+        
+        var totalMaskedCount: Int {
+            barcodeCount + sensitiveTextCount
+        }
     }
-
-    static func process(image: UIImage, mosaicScale: CGFloat) -> Result<Output, BarcodeProcessingError> {
+    
+    static func process(
+        image: UIImage,
+        mosaicScale: CGFloat,
+        rules: SensitiveContentRuleSet
+    ) -> Result<Output, PrivacyProcessingError> {
         guard let cgImage = image.cgImage else {
             return .failure(.unableToLoadSource)
         }
-
-        let ciImage = CIImage(cgImage: cgImage)
-        let request = VNDetectBarcodesRequest()
+        
+        let orientation = CGImagePropertyOrientation(image.imageOrientation)
+        let barcodeRequest = VNDetectBarcodesRequest()
+        let textRequest = VNRecognizeTextRequest()
+        textRequest.recognitionLevel = .accurate
+        textRequest.usesLanguageCorrection = true
+        textRequest.minimumTextHeight = 0.015
+        textRequest.recognitionLanguages = ["zh-Hans", "en-US"]
+        
         let handler = VNImageRequestHandler(
             cgImage: cgImage,
-            orientation: CGImagePropertyOrientation(image.imageOrientation),
+            orientation: orientation,
             options: [:]
         )
-
+        
         do {
-            try handler.perform([request])
+            try handler.perform([barcodeRequest, textRequest])
         } catch {
             return .failure(.detectionFailed(error.localizedDescription))
         }
-
-        let observations = request.results ?? []
-
-        let context = CIContext()
-        var mask = CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 1)).cropped(to: ciImage.extent)
-
-        for observation in observations {
+        
+        let ciImage = CIImage(cgImage: cgImage)
+        let extent = ciImage.extent
+        var mask = CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 1)).cropped(to: extent)
+        var maskedBarcodeCount = 0
+        var maskedTextCount = 0
+        
+        let barcodeObservations = barcodeRequest.results ?? []
+        for observation in barcodeObservations {
             let rect = VNImageRectForNormalizedRect(
                 observation.boundingBox,
-                Int(ciImage.extent.width),
-                Int(ciImage.extent.height)
+                Int(extent.width),
+                Int(extent.height)
             )
-
-            guard rect.width > 0, rect.height > 0 else { continue }
-
-            let whiteRect = CIImage(color: CIColor(red: 1, green: 1, blue: 1, alpha: 1)).cropped(to: rect)
+            let expanded = padded(rect: rect, in: extent, scale: 0.2)
+            guard expanded.width > 0, expanded.height > 0,
+                  let whiteRect = whiteMask(for: expanded) else { continue }
+            
             mask = whiteRect.composited(over: mask)
+            maskedBarcodeCount += 1
         }
-
-        if observations.isEmpty {
-            return .success(Output(image: image, count: 0))
+        
+        if let textObservations = textRequest.results {
+            for observation in textObservations {
+                guard let candidate = observation.topCandidates(1).first else { continue }
+                let text = candidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard rules.containsSensitiveText(text) else { continue }
+                
+                let rect = VNImageRectForNormalizedRect(
+                    observation.boundingBox,
+                    Int(extent.width),
+                    Int(extent.height)
+                )
+                let expanded = padded(rect: rect, in: extent, scale: 0.35)
+                guard expanded.width > 0, expanded.height > 0,
+                      let whiteRect = whiteMask(for: expanded) else { continue }
+                
+                mask = whiteRect.composited(over: mask)
+                maskedTextCount += 1
+            }
         }
-
+        
+        if maskedBarcodeCount == 0 && maskedTextCount == 0 {
+            return .success(Output(image: image,
+                                   barcodeCount: 0,
+                                   sensitiveTextCount: 0))
+        }
+        
         let pixelated = ciImage
             .applyingFilter("CIPixellate", parameters: [kCIInputScaleKey: mosaicScale])
-            .cropped(to: ciImage.extent)
-
+            .cropped(to: extent)
+        
         let blend = CIFilter.blendWithMask()
         blend.inputImage = pixelated
         blend.backgroundImage = ciImage
         blend.maskImage = mask
-
+        
         guard let outputImage = blend.outputImage else {
             return .failure(.blendFailed)
         }
-
-        guard let resultCGImage = context.createCGImage(outputImage, from: ciImage.extent) else {
+        
+        let context = CIContext()
+        guard let resultCGImage = context.createCGImage(outputImage, from: extent) else {
             return .failure(.outputCreationFailed)
         }
-
+        
         let resultImage = UIImage(cgImage: resultCGImage, scale: image.scale, orientation: .up)
-        return .success(Output(image: resultImage, count: observations.count))
+        return .success(Output(image: resultImage,
+                               barcodeCount: maskedBarcodeCount,
+                               sensitiveTextCount: maskedTextCount))
+    }
+    
+    private static func padded(rect: CGRect, in extent: CGRect, scale: CGFloat) -> CGRect {
+        guard !rect.isNull, !rect.isEmpty else { return .null }
+        let basePadding = max(min(extent.width, extent.height) * 0.005, 4)
+        let dx = max(rect.width * scale, basePadding)
+        let dy = max(rect.height * scale, basePadding)
+        let expanded = rect.insetBy(dx: -dx, dy: -dy)
+        return expanded.intersection(extent)
+    }
+    
+    private static func whiteMask(for rect: CGRect) -> CIImage? {
+        guard !rect.isNull, !rect.isEmpty else { return nil }
+        return CIImage(color: CIColor(red: 1, green: 1, blue: 1, alpha: 1)).cropped(to: rect)
     }
 }
 
-private enum BarcodeProcessingError: LocalizedError {
+struct SensitiveContentRuleSet {
+    let regexPatterns: [String]
+    let keywords: [String]
+    
+    private let regexes: [NSRegularExpression]
+    private let keywordSet: Set<String>
+    
+    init(regexPatterns: [String], keywords: [String]) {
+        self.regexPatterns = regexPatterns
+        self.keywords = keywords
+        self.regexes = regexPatterns.compactMap {
+            try? NSRegularExpression(pattern: $0, options: [.caseInsensitive])
+        }
+        self.keywordSet = Set(keywords.map { $0.uppercased() })
+    }
+    
+    static let `default` = SensitiveContentRuleSet(
+        regexPatterns: [
+            "\\b\\d{6}(19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]\\b",
+            "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+            "\\b[A-Z]{2}\\d{3,4}\\b"
+        ],
+        keywords: [
+            "身份证号", "证件号", "PASSPORT", "SSN"
+        ]
+    )
+    
+    func containsSensitiveText(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        
+        let nsText = trimmed as NSString
+        let searchRange = NSRange(location: 0, length: nsText.length)
+        for regex in regexes where regex.firstMatch(in: trimmed, options: [], range: searchRange) != nil {
+            return true
+        }
+        
+        let normalized = trimmed
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "　", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: "：", with: "")
+            .uppercased()
+        
+        for keyword in keywordSet where normalized.contains(keyword) {
+            return true
+        }
+        
+        return false
+    }
+    
+    func addingRegexPattern(_ pattern: String) -> SensitiveContentRuleSet {
+        var patterns = regexPatterns
+        patterns.append(pattern)
+        return SensitiveContentRuleSet(regexPatterns: patterns, keywords: keywords)
+    }
+    
+    func addingKeyword(_ keyword: String) -> SensitiveContentRuleSet {
+        var words = keywords
+        words.append(keyword)
+        return SensitiveContentRuleSet(regexPatterns: regexPatterns, keywords: words)
+    }
+}
+
+private enum PrivacyProcessingError: LocalizedError {
     case unableToLoadSource
     case detectionFailed(String)
     case blendFailed
     case outputCreationFailed
     case saveFailed
-
+    
     var errorDescription: String? {
         switch self {
         case .unableToLoadSource:
