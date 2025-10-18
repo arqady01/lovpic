@@ -47,9 +47,9 @@ struct ToolsView: View {
             color: Color(red: 1.0, green: 0.57, blue: 0.27)
         ),
         ToolItem(
-            icon: "text.bubble.fill",
-            title: "文字标注",
-            description: "添加精美文字",
+            icon: "camera.badge.clock",
+            title: "实景识别",
+            description: "识别万物并标注",
             color: Color(red: 0.3, green: 0.83, blue: 0.45)
         ),
         ToolItem(
