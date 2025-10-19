@@ -11,6 +11,7 @@ struct ToolsView: View {
     private enum Destination: Hashable {
         case imageEnhancement
         case framedScreenshot
+        case creativeNineGrid
         case backgroundRemoval
         case imageStitching
         case realTimeRecognition
@@ -29,6 +30,12 @@ struct ToolsView: View {
             title: "拼接图片",
             description: "竖向拼接九宫图",
             color: Color(red: 0.31, green: 0.62, blue: 0.98)
+        ),
+        ToolItem(
+            icon: "square.grid.3x3.square.fill",
+            title: "创意九宫格",
+            description: "一键生成九宫格拼图",
+            color: Color(red: 0.39, green: 0.52, blue: 0.96)
         ),
         ToolItem(
             icon: "square.2.layers.3d.top.filled",
@@ -130,6 +137,8 @@ struct ToolsView: View {
                     ImageEnhancementView()
                 case .framedScreenshot:
                     FramedScreenshotView()
+                case .creativeNineGrid:
+                    CreativeNineGridView()
                 case .backgroundRemoval:
                     BackgroundRemovalView()
                 case .imageStitching:
@@ -157,6 +166,8 @@ struct ToolsView: View {
             navigationPath.append(.imageStitching)
         case "带壳截图":
             navigationPath.append(.framedScreenshot)
+        case "创意九宫格":
+            navigationPath.append(.creativeNineGrid)
         case "传统抠图":
             navigationPath.append(.backgroundRemoval)
         case "实景识别":

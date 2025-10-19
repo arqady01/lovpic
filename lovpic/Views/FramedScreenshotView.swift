@@ -53,8 +53,6 @@ struct FramedScreenshotView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                header
-                
                 templateSelector
                 
                 previewSection
@@ -81,19 +79,6 @@ struct FramedScreenshotView: View {
         .onChange(of: compositionMode) { _, _ in
             composeIfNeeded()
         }
-    }
-    
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("选择模板，点击手机屏幕区域，将你的图片合成到真实设备中。")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.primary)
-            
-            Text("支持 PNG 屏幕模板，并配套 JSON 定义屏幕区域。")
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     @ViewBuilder
