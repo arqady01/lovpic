@@ -16,6 +16,7 @@ struct ToolsView: View {
         case imageStitching
         case realTimeRecognition
         case safeCode
+        case poseDetection
     }
     
     private let tools = [
@@ -26,7 +27,7 @@ struct ToolsView: View {
             color: Color(red: 0.65, green: 0.37, blue: 0.90)
         ),
         ToolItem(
-            icon: "square.split.2x1",
+            icon: "square.split.1x2",
             title: "拼接图片",
             description: "竖向图片拼接",
             color: Color(red: 0.31, green: 0.62, blue: 0.98)
@@ -62,7 +63,13 @@ struct ToolsView: View {
             color: Color(red: 0.3, green: 0.83, blue: 0.45)
         ),
         ToolItem(
-            icon: "photo.on.rectangle.angled",
+            icon: "figure.walk.circle.fill",
+            title: "姿态检测",
+            description: "捕捉人体关键点",
+            color: Color(red: 0.20, green: 0.62, blue: 0.98)
+        ),
+        ToolItem(
+            icon: "key.shield.fill",
             title: "码住安全",
             description: "守护照片隐私安全",
             color: Color(red: 0.1, green: 0.80, blue: 0.88)
@@ -145,6 +152,8 @@ struct ToolsView: View {
                     ImageStitchingView()
                 case .realTimeRecognition:
                     RealTimeRecognitionView()
+                case .poseDetection:
+                    PoseDetectionView()
                 case .safeCode:
                     SafeCodeView()
                 }
@@ -172,6 +181,8 @@ struct ToolsView: View {
             navigationPath.append(.backgroundRemoval)
         case "实景识别":
             navigationPath.append(.realTimeRecognition)
+        case "姿态检测":
+            navigationPath.append(.poseDetection)
         case "码住安全":
             navigationPath.append(.safeCode)
         default:
