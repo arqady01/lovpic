@@ -616,9 +616,24 @@ private struct SelectionStepView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("主图主体请尽量清晰、完整，以提升抠图效果。", systemImage: "figure.wave")
-                        Label("小图可以按场景、色调组合，后续还可调整裁剪。", systemImage: "square.grid.3x2")
-                        Label("若提示权限不足，可前往系统设置开启相册访问。", systemImage: "exclamationmark.triangle")
+                        Label {
+                            Text("主图主体请尽量清晰、完整，以提升抠图效果。")
+                        } icon: {
+                            Image(systemName: "1.circle")
+                                .foregroundColor(.blue)
+                        }
+                        Label {
+                            Text("小图可以按场景、色调组合，后续还可调整裁剪。")
+                        } icon: {
+                            Image(systemName: "2.circle")
+                                .foregroundColor(.blue)
+                        }
+                        Label {
+                            Text("若提示权限不足，可前往系统设置开启相册访问。")
+                        } icon: {
+                            Image(systemName: "3.circle")
+                                .foregroundColor(.blue)
+                        }
                     }
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)

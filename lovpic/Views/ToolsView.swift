@@ -28,13 +28,13 @@ struct ToolsView: View {
         ToolItem(
             icon: "square.split.2x1",
             title: "拼接图片",
-            description: "竖向拼接九宫图",
+            description: "竖向图片拼接",
             color: Color(red: 0.31, green: 0.62, blue: 0.98)
         ),
         ToolItem(
-            icon: "square.grid.3x3.square.fill",
+            icon: "square.grid.3x3",
             title: "创意九宫格",
-            description: "一键生成九宫格拼图",
+            description: "3D效果九宫格",
             color: Color(red: 0.39, green: 0.52, blue: 0.96)
         ),
         ToolItem(
