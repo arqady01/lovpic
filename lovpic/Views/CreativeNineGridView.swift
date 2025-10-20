@@ -55,7 +55,7 @@ struct CreativeNineGridView: View {
     
     // Layout
     @State private var layoutOrientation: LShapeOrientation = .openingBottomRight
-    private let gridSpacing: Double = 20
+    private let gridSpacing: Double = 15
     @State private var isExporting = false
     @State private var exportAlert: CreativeNineGridError?
     
@@ -164,15 +164,16 @@ private extension CreativeNineGridView {
 
     @ViewBuilder
     private var layoutContent: some View {
-        LayoutStepView(
-            croppedImages: croppedSmallImages,
-            subjectCutout: subjectCutout,
-            orientation: $layoutOrientation,
-            spacing: $gridSpacing,
-            subjectTransform: $subjectTransform,
-            isExporting: isExporting,
-            onExport: exportComposition
-        )
+            LayoutStepView(
+                croppedImages: $croppedSmallImages,
+                subjectCutout: subjectCutout,
+                orientation: $layoutOrientation,
+                spacing: gridSpacing,
+                subjectTransform: $subjectTransform,
+                isExporting: isExporting,
+                onReorder: reorderSmallImages,
+                onExport: exportComposition
+            )
     }
 }
 
@@ -210,6 +211,16 @@ private extension CreativeNineGridView {
         syncCroppedImages()
         if pickerPhase != .main {
             pickerPhase = .small
+        }
+    }
+    
+    @MainActor
+    func reorderSmallImages(from source: Int, to destination: Int) {
+        guard source != destination else { return }
+        guard smallPhotos.indices.contains(source), smallPhotos.indices.contains(destination) else { return }
+        smallPhotos.swapAt(source, destination)
+        if croppedSmallImages.indices.contains(source), croppedSmallImages.indices.contains(destination) {
+            croppedSmallImages.swapAt(source, destination)
         }
     }
     
@@ -555,33 +566,50 @@ private struct SelectionStepView: View {
                     }
                 }
                 
-                PhotosPicker(
-                    selection: $pendingSmallPickerItems,
-                    maxSelectionCount: max(0, 5 - smallPhotos.count),
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
-                    Label(
-                        pickerPhase == .main ? "请先选择主图" : "批量选择小图",
-                        systemImage: "photo.fill.on.rectangle.fill"
+                HStack(spacing: 14) {
+                    PhotosPicker(
+                        selection: $pendingSmallPickerItems,
+                        maxSelectionCount: max(0, 5 - smallPhotos.count),
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label(
+                            pickerPhase == .main ? "请先选择主图" : "批量选择小图",
+                            systemImage: "photo.fill.on.rectangle.fill"
+                        )
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.accentColor.opacity(0.18))
+                        )
+                    }
+                    .disabled(
+                        isLoadingSelectedPhoto ||
+                        isRunningSegmentation ||
+                        isCroppingInProgress ||
+                        pickerPhase == .main ||
+                        smallPhotos.count >= 5
                     )
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color.accentColor.opacity(0.18))
-                    )
+                    .buttonStyle(.plain)
+                    
+                    Button(action: onNext) {
+                        Text("进入布局设计")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .fill(canProceed ? Color.accentColor : Color.gray.opacity(0.5))
+                            )
+                    }
+                    .disabled(!canProceed)
+                    .buttonStyle(.plain)
                 }
-                .disabled(
-                    isLoadingSelectedPhoto ||
-                    isRunningSegmentation ||
-                    isCroppingInProgress ||
-                    pickerPhase == .main ||
-                    smallPhotos.count >= 5
-                )
-                .buttonStyle(.plain)
                 .padding(.horizontal, 20)
+                .padding(.top, 8)
                 
                 VStack(spacing: 12) {
                     Text("提示")
@@ -603,22 +631,7 @@ private struct SelectionStepView: View {
                 }
                 .padding(.horizontal, 20)
                 
-                Button(action: onNext) {
-                    Text("进入布局设计")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .fill(canProceed ? Color.accentColor : Color.gray.opacity(0.5))
-                        )
-                }
-                .disabled(!canProceed)
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 20)
+                .padding(.bottom, 12)
                 if !canProceed {
                     Text("完成主图抠图并裁剪 5 张小图后即可进入布局")
                         .font(.system(size: 12))
@@ -644,10 +657,10 @@ private struct MainPhotoCard: View {
                 .padding(.horizontal, 8)
             
             ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                Rectangle()
                     .fill(Color(.secondarySystemBackground))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        Rectangle()
                             .stroke(Color.white.opacity(0.6), lineWidth: 1)
                     )
                     .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 6)
@@ -658,7 +671,7 @@ private struct MainPhotoCard: View {
                         .scaledToFill()
                         .frame(height: 220)
                         .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .clipShape(Rectangle())
                         .overlay(alignment: .topTrailing) {
                             Button {
                                 onDelete()
@@ -725,7 +738,7 @@ private struct SmallPhotosGrid: View {
                                 .resizable()
                                 .scaledToFill()
                                 .frame(height: 104)
-                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .clipShape(Rectangle())
                                 .overlay(alignment: .topTrailing) {
                                     Button {
                                         onDelete(index)
@@ -755,7 +768,7 @@ private struct SmallPhotosGrid: View {
                             matching: .images,
                             photoLibrary: .shared()
                         ) {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            Rectangle()
                                 .fill(Color(.secondarySystemBackground))
                                 .frame(height: 104)
                                 .overlay(
@@ -836,12 +849,13 @@ private struct SmallPhotoCropModal: View {
 }
 
 private struct LayoutStepView: View {
-    let croppedImages: [UIImage]
+    @Binding var croppedImages: [UIImage]
     let subjectCutout: UIImage?
     @Binding var orientation: LShapeOrientation
     let spacing: Double
     @Binding var subjectTransform: SubjectTransform
     let isExporting: Bool
+    let onReorder: (Int, Int) -> Void
     let onExport: () -> Void
     
     var body: some View {
@@ -854,12 +868,13 @@ private struct LayoutStepView: View {
                         .padding(.top, 16)
                     
                     NineGridPreview(
-                        smallImages: croppedImages,
+                        images: $croppedImages,
                         subject: subjectCutout,
                         orientation: orientation,
                         spacing: spacingValue,
                         subjectTransform: $subjectTransform,
-                        isInteractive: subjectCutout != nil
+                        isInteractive: subjectCutout != nil,
+                        onReorder: onReorder
                     )
                     .frame(height: 360)
                     .padding(.horizontal, 24)
@@ -880,14 +895,6 @@ private struct LayoutStepView: View {
                     }
                     .padding(.horizontal, 24)
                     
-                    HStack {
-                        Label("间隙固定为 20 px", systemImage: "square.grid.3x3")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 24)
-
                     if subjectCutout != nil {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("主体拖放")
@@ -947,41 +954,46 @@ private struct LayoutStepView: View {
 // MARK: - Preview Components
 
 private struct NineGridPreview: View {
-    let smallImages: [UIImage]
+    @Binding var images: [UIImage]
     let subject: UIImage?
     let orientation: LShapeOrientation
     let spacing: CGFloat
     @Binding var subjectTransform: SubjectTransform
     let isInteractive: Bool
+    let onReorder: (Int, Int) -> Void
+    
+    @State private var activeDrag: ActiveDrag?
+    @State private var dropTarget: Int?
     
     var body: some View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
             let cellSize = orientation.cellSize(for: size, spacing: spacing)
             let offsets = orientation.cellOffsets(cellSize: cellSize, spacing: spacing)
+            let centers = offsets.map { $0.position() }
             
             ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: 10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(Color.white.opacity(0.6), lineWidth: 1)
-                    )
-                
-                ForEach(Array(offsets.enumerated()), id: \.offset) { pair in
-                    if let image = smallImages.element(at: pair.offset) {
-                        Image(uiImage: image)
+                ForEach(Array(centers.enumerated()), id: \.offset) { pair in
+                    if let image = images.element(at: pair.offset) {
+                        let position = pair.element
+                        let isDragging = activeDrag?.index == pair.offset
+                        let translation = isDragging ? activeDrag?.translation ?? .zero : .zero
+                        let baseView = Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
                             .frame(width: cellSize, height: cellSize)
                             .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.white.opacity(0.8), lineWidth: 2)
-                            )
-                            .position(pair.element.position())
+                            .position(position)
+                            .offset(translation)
+                            .scaleEffect(isDragging ? 1.06 : 1)
+                            .zIndex(isDragging ? 1 : 0)
+                        Group {
+                            if isInteractive {
+                                baseView.gesture(dragGesture(for: pair.offset, basePosition: position, centers: centers))
+                            } else {
+                                baseView
+                            }
+                        }
                     }
                 }
                 
@@ -998,9 +1010,54 @@ private struct NineGridPreview: View {
                         isInteractive: isInteractive
                     )
                 }
+                if let target = dropTarget, let center = centers.element(at: target) {
+                    Rectangle()
+                        .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 3, dash: [6, 6]))
+                        .frame(width: cellSize, height: cellSize)
+                        .position(center)
+                }
             }
             .frame(width: size, height: size)
         }
+    }
+    
+    private func nearestIndex(to point: CGPoint, centers: [CGPoint]) -> Int? {
+        guard !centers.isEmpty else { return nil }
+        var bestIndex = 0
+        var bestDistance = CGFloat.greatestFiniteMagnitude
+        for (index, center) in centers.enumerated() {
+            let dx = point.x - center.x
+            let dy = point.y - center.y
+            let distance = dx * dx + dy * dy
+            if distance < bestDistance {
+                bestDistance = distance
+                bestIndex = index
+            }
+        }
+        return bestIndex
+    }
+    
+    private func dragGesture(for index: Int, basePosition: CGPoint, centers: [CGPoint]) -> some Gesture {
+        DragGesture()
+            .onChanged { value in
+                activeDrag = ActiveDrag(index: index, translation: value.translation)
+                let newCenter = CGPoint(
+                    x: basePosition.x + value.translation.width,
+                    y: basePosition.y + value.translation.height
+                )
+                dropTarget = nearestIndex(to: newCenter, centers: centers)
+            }
+            .onEnded { value in
+                let newCenter = CGPoint(
+                    x: basePosition.x + value.translation.width,
+                    y: basePosition.y + value.translation.height
+                )
+                if let target = nearestIndex(to: newCenter, centers: centers), target != index {
+                    onReorder(index, target)
+                }
+                activeDrag = nil
+                dropTarget = nil
+            }
     }
 }
 
@@ -1011,7 +1068,7 @@ private struct EmptyCellsOverlay: View {
     
     var body: some View {
         ForEach(orientation.emptyCells, id: \.self) { cell in
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            Rectangle()
                 .stroke(style: StrokeStyle(lineWidth: 1, dash: [6, 6]))
                 .foregroundColor(Color.secondary.opacity(0.24))
                 .frame(width: cellSize, height: cellSize)
@@ -1416,6 +1473,11 @@ private struct SubjectTransform: Equatable {
     var offset: CGSize = .zero
 }
 
+private struct ActiveDrag {
+    let index: Int
+    var translation: CGSize
+}
+
 private struct CreativeNineGridError: Identifiable, Error {
     let id = UUID()
     let title: String
@@ -1600,6 +1662,7 @@ private final class CropRenderer {
 
 private final class NineGridRenderer {
     private let baseSize: CGFloat = 2048
+    private let bleedRatio: CGFloat = 0.10
     
     func renderNineGrid(
         smallImages: [UIImage],
@@ -1608,27 +1671,30 @@ private final class NineGridRenderer {
         spacing: CGFloat,
         subjectTransform: SubjectTransform
     ) -> UIImage? {
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: baseSize, height: baseSize))
+        let bleed = baseSize * bleedRatio
+        let canvasSize = CGSize(width: baseSize + bleed * 2, height: baseSize + bleed * 2)
+        let renderer = UIGraphicsImageRenderer(size: canvasSize)
         return renderer.image { context in
-            let canvas = CGRect(origin: .zero, size: renderer.format.bounds.size)
+            let canvas = CGRect(origin: .zero, size: canvasSize)
             UIColor.white.setFill()
             context.fill(canvas)
             
             let totalSpacing = spacing * 2
-            let cellSize = (canvas.width - totalSpacing) / 3
+            let cellSize = (baseSize - totalSpacing) / 3
+            let offset = CGPoint(x: bleed, y: bleed)
             
             for (index, cell) in orientation.filledCells.enumerated() {
                 guard let image = smallImages.element(at: index) else { continue }
                 let origin = CGPoint(
-                    x: CGFloat(cell.column) * (cellSize + spacing),
-                    y: CGFloat(cell.row) * (cellSize + spacing)
+                    x: offset.x + CGFloat(cell.column) * (cellSize + spacing),
+                    y: offset.y + CGFloat(cell.row) * (cellSize + spacing)
                 )
                 let rect = CGRect(origin: origin, size: CGSize(width: cellSize, height: cellSize))
                 image.draw(in: rect)
             }
             
             if let subject {
-                let placement = orientation.subjectPlacement(cellSize: cellSize, spacing: spacing, containerSize: canvas.width)
+                let placement = orientation.subjectPlacement(cellSize: cellSize, spacing: spacing, containerSize: baseSize)
                 let trimmedSubject = subject.trimmedToOpaqueBounds()
                 let subjectScale = max(trimmedSubject.size.width, trimmedSubject.size.height)
                 let desiredSize = cellSize * 1.9 * subjectTransform.scale
@@ -1639,8 +1705,8 @@ private final class NineGridRenderer {
                     height: subjectTransform.offset.height * cellSize
                 )
                 let origin = CGPoint(
-                    x: placement.position.x - subjectSize.width / 2 + placement.offset.width + transformOffset.width,
-                    y: placement.position.y - subjectSize.height / 2 + placement.offset.height + transformOffset.height
+                    x: offset.x + placement.position.x - subjectSize.width / 2 + placement.offset.width + transformOffset.width,
+                    y: offset.y + placement.position.y - subjectSize.height / 2 + placement.offset.height + transformOffset.height
                 )
                 context.cgContext.saveGState()
                 context.cgContext.setShadow(offset: CGSize(width: 0, height: 18), blur: 28, color: UIColor.black.withAlphaComponent(0.24).cgColor)
