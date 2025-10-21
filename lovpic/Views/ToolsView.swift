@@ -12,6 +12,8 @@ struct ToolsView: View {
         case imageEnhancement
         case framedScreenshot
         case creativeNineGrid
+        case documentScanning
+        case photoScanning
         case backgroundRemoval
         case imageStitching
         case realTimeRecognition
@@ -37,6 +39,18 @@ struct ToolsView: View {
             title: "创意九宫格",
             description: "3D效果九宫格",
             color: Color(red: 0.39, green: 0.52, blue: 0.96)
+        ),
+        ToolItem(
+            icon: "doc.viewfinder",
+            title: "文档扫描",
+            description: "拍摄并保存文稿",
+            color: Color(red: 0.25, green: 0.72, blue: 0.86)
+        ),
+        ToolItem(
+            icon: "camera.metering.multispot",
+            title: "照片扫描",
+            description: "功能即将上线",
+            color: Color(red: 0.98, green: 0.49, blue: 0.23)
         ),
         ToolItem(
             icon: "square.2.layers.3d.top.filled",
@@ -146,6 +160,10 @@ struct ToolsView: View {
                     FramedScreenshotView()
                 case .creativeNineGrid:
                     CreativeNineGridView()
+                case .documentScanning:
+                    DocumentScannerFeatureView()
+                case .photoScanning:
+                    PhotoScannerFeatureView()
                 case .backgroundRemoval:
                     BackgroundRemovalView()
                 case .imageStitching:
@@ -179,6 +197,10 @@ struct ToolsView: View {
             navigationPath.append(.creativeNineGrid)
         case "传统抠图":
             navigationPath.append(.backgroundRemoval)
+        case "文档扫描":
+            navigationPath.append(.documentScanning)
+        case "照片扫描":
+            navigationPath.append(.photoScanning)
         case "实景识别":
             navigationPath.append(.realTimeRecognition)
         case "姿态检测":

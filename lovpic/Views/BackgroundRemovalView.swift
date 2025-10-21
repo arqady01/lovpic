@@ -403,19 +403,6 @@ private enum BackgroundRemovalProcessor {
     }
 }
 
-private extension UIImage {
-    func normalized() -> UIImage {
-        if imageOrientation == .up {
-            return self
-        }
-
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        defer { UIGraphicsEndImageContext() }
-        draw(in: CGRect(origin: .zero, size: size))
-        return UIGraphicsGetImageFromCurrentImageContext() ?? self
-    }
-}
-
 #Preview {
     NavigationStack {
         BackgroundRemovalView()

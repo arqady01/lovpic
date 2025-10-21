@@ -123,7 +123,7 @@ struct ImageStitchingView: View {
             
             for item in items.prefix(capacity) {
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data)?.normalized else {
+                      let image = UIImage(data: data)?.normalized() else {
                     continue
                 }
                 let preview = await generatePreview(from: image)
@@ -736,7 +736,7 @@ private enum ImageStitchingRenderer {
         var targetWidth: CGFloat = .greatestFiniteMagnitude
         
         for asset in assets {
-            guard let cgImage = asset.original.normalized.cgImage else { continue }
+            guard let cgImage = asset.original.normalized().cgImage else { continue }
             let widthPx = cgImage.width
             let heightPx = cgImage.height
             guard widthPx > 0, heightPx > 0 else { continue }
@@ -807,16 +807,6 @@ private enum ImageStitchingRenderer {
 // MARK: - Helpers
 
 private extension UIImage {
-    var normalized: UIImage {
-        guard imageOrientation != .up else { return self }
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = scale
-        format.opaque = false
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            draw(in: CGRect(origin: .zero, size: size))
-        }
-    }
-    
     func scaled(toWidth width: CGFloat) -> UIImage {
         guard width > 0 else { return self }
         guard abs(size.width - width) > .ulpOfOne else { return self }
