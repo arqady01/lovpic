@@ -17,6 +17,7 @@ struct HomeView: View {
     ]
 
     @State private var currentBanner = 0
+    @State private var bannerTimer: Timer?
 
     private let banners: [BannerItem] = [
         BannerItem(
@@ -65,6 +66,14 @@ struct HomeView: View {
             ctaGradient: [Color.white, Color(red: 0.97, green: 0.88, blue: 0.86)]
         )
     ]
+    
+    private let hotTemplates: [HotTemplateItem] = [
+        HotTemplateItem(title: "双十二大促", subtitle: "电商热卖", symbolName: "bag.fill", gradient: [Color.orange, Color.red]),
+        HotTemplateItem(title: "圣诞主题", subtitle: "节日氛围", symbolName: "snowflake", gradient: [Color.cyan, Color.blue]),
+        HotTemplateItem(title: "年货节", subtitle: "新年特惠", symbolName: "gift.fill", gradient: [Color.red, Color.pink]),
+        HotTemplateItem(title: "美食推广", subtitle: "餐饮必备", symbolName: "fork.knife", gradient: [Color.yellow, Color.orange]),
+        HotTemplateItem(title: "美妆护肤", subtitle: "精致生活", symbolName: "sparkles", gradient: [Color.pink, Color.purple])
+    ]
 
     @Binding var isPresentingDetail: Bool
     @State private var navigationPath: [FeatureDestination] = []
@@ -76,13 +85,22 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 20) {
+                        // 顶部欢迎区域
+                        HeaderSection()
+                        
+                        // Banner 轮播
                         BannerCarousel(banners: banners, selection: $currentBanner, onSelect: openBanner)
                         BannerIndicator(count: banners.count, currentIndex: currentBanner)
+                        
+                        // AI 智能工具
                         QuickActionsSection(onSelect: openShortcut)
+                        
+                        // 热门模板推荐
+                        HotTemplatesSection(templates: hotTemplates, onSelect: openTemplate)
                     }
                     .padding(.horizontal, 18)
-                    .padding(.top, 22)
+                    .padding(.top, 12)
                     .padding(.bottom, 110)
                 }
             }
@@ -95,7 +113,27 @@ struct HomeView: View {
         .onChange(of: navigationPath) { _, newValue in
             isPresentingDetail = !newValue.isEmpty
         }
-        .onAppear { isPresentingDetail = false }
+        .onAppear {
+            isPresentingDetail = false
+            startBannerTimer()
+        }
+        .onDisappear {
+            stopBannerTimer()
+        }
+    }
+    
+    // MARK: - Banner 自动轮播
+    private func startBannerTimer() {
+        bannerTimer = Timer.scheduledTimer(withTimeInterval: 4.5, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                currentBanner = (currentBanner + 1) % banners.count
+            }
+        }
+    }
+    
+    private func stopBannerTimer() {
+        bannerTimer?.invalidate()
+        bannerTimer = nil
     }
 
     private func openBanner(_ banner: BannerItem) {
@@ -104,6 +142,61 @@ struct HomeView: View {
 
     private func openShortcut(_ shortcut: ToolShortcutItem) {
         navigationPath.append(FeatureDestination(title: shortcut.title))
+    }
+    
+    private func openTemplate(_ template: HotTemplateItem) {
+        navigationPath.append(FeatureDestination(title: template.title))
+    }
+}
+
+// MARK: - 顶部欢迎区域
+private struct HeaderSection: View {
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 6..<12: return "早上好"
+        case 12..<14: return "中午好"
+        case 14..<18: return "下午好"
+        case 18..<22: return "晚上好"
+        default: return "夜深了"
+        }
+    }
+    
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(greeting)，创作者 👋")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Text("今天想创作什么呢？")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            
+            Spacer()
+            
+            // 通知按钮
+            Button(action: {}) {
+                ZStack {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    // 红点提示
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 10, height: 10)
+                        .offset(x: 10, y: -10)
+                }
+            }
+            .buttonStyle(ScaleButtonStyle())
+        }
+        .padding(.vertical, 8)
     }
 }
 
@@ -169,8 +262,9 @@ private struct BannerCard: View {
                                                        endPoint: .bottom)
                                     )
                             )
+                            .shadow(color: banner.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(ScaleButtonStyle())
                 }
 
                 Spacer(minLength: 0)
@@ -240,8 +334,51 @@ private struct BannerIndicator: View {
                     .animation(.easeInOut(duration: 0.25), value: currentIndex)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 4)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
+// MARK: - Section 标题组件
+private struct SectionHeader: View {
+    let title: String
+    let subtitle: String?
+    let action: (() -> Void)?
+    
+    init(title: String, subtitle: String? = nil, action: (() -> Void)? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+        self.action = action
+    }
+    
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            
+            Spacer()
+            
+            if let action = action {
+                Button(action: action) {
+                    HStack(spacing: 4) {
+                        Text("查看全部")
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white.opacity(0.7))
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
+        }
     }
 }
 
@@ -287,16 +424,20 @@ private struct QuickActionsSection: View {
     let onSelect: (ToolShortcutItem) -> Void
 
     var body: some View {
-        LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 24) {
-            ForEach(shortcuts) { shortcut in
-                Button(action: { onSelect(shortcut) }) {
-                    ToolShortcutView(item: shortcut)
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "AI 智能工具", subtitle: "一键生成，高效创作")
+            
+            LazyVGrid(columns: shortcutColumns, alignment: .center, spacing: 24) {
+                ForEach(shortcuts) { shortcut in
+                    Button(action: { onSelect(shortcut) }) {
+                        ToolShortcutView(item: shortcut)
+                    }
+                    .buttonStyle(ScaleButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 6)
     }
 }
 
@@ -352,6 +493,91 @@ private struct ShortcutBadgeView: View {
             )
             .shadow(color: badge.background.opacity(0.35), radius: 6, x: 0, y: 3)
     }
+}
+
+// MARK: - 热门模板推荐
+private struct HotTemplatesSection: View {
+    let templates: [HotTemplateItem]
+    let onSelect: (HotTemplateItem) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "热门模板推荐", subtitle: "精选爆款，助力创作", action: {})
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(templates) { template in
+                        Button(action: { onSelect(template) }) {
+                            HotTemplateCard(template: template)
+                        }
+                        .buttonStyle(ScaleButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
+            }
+        }
+    }
+}
+
+private struct HotTemplateCard: View {
+    let template: HotTemplateItem
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // 图标区域
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: template.gradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 130, height: 100)
+                
+                Image(systemName: template.symbolName)
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+            }
+            .shadow(color: template.gradient.first?.opacity(0.4) ?? Color.clear, radius: 10, x: 0, y: 6)
+            
+            // 文字区域
+            VStack(alignment: .leading, spacing: 3) {
+                Text(template.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Text(template.subtitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 4)
+        }
+        .frame(width: 130)
+    }
+}
+
+// MARK: - 按钮按压缩放效果
+private struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+// MARK: - 数据模型
+private struct HotTemplateItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let symbolName: String
+    let gradient: [Color]
 }
 
 private struct BannerItem: Identifiable {

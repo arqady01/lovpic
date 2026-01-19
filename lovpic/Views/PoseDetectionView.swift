@@ -493,7 +493,7 @@ extension PoseDetectionViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
             let startTime = CFAbsoluteTimeGetCurrent()
             try handler.perform(requests)
 
-            guard let observations = poseRequest.results as? [VNHumanBodyPoseObservation],
+            guard let observations = poseRequest.results,
                   let observation = observations.first else {
                 DispatchQueue.main.async {
                     self.currentPose = nil

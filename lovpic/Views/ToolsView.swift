@@ -11,14 +11,13 @@ struct ToolsView: View {
     private enum Destination: Hashable {
         case imageEnhancement
         case framedScreenshot
-        case creativeNineGrid
         case documentScanning
-        case photoScanning
         case backgroundRemoval
         case imageStitching
         case realTimeRecognition
         case safeCode
         case poseDetection
+        case imageCrop
     }
     
     private let tools = [
@@ -35,34 +34,16 @@ struct ToolsView: View {
             color: Color(red: 0.31, green: 0.62, blue: 0.98)
         ),
         ToolItem(
-            icon: "square.grid.3x3",
-            title: "创意九宫格",
-            description: "3D效果九宫格",
-            color: Color(red: 0.39, green: 0.52, blue: 0.96)
-        ),
-        ToolItem(
             icon: "doc.viewfinder",
             title: "文档扫描",
             description: "拍摄并保存文稿",
             color: Color(red: 0.25, green: 0.72, blue: 0.86)
         ),
         ToolItem(
-            icon: "camera.metering.multispot",
-            title: "照片扫描",
-            description: "功能即将上线",
-            color: Color(red: 0.98, green: 0.49, blue: 0.23)
-        ),
-        ToolItem(
             icon: "square.2.layers.3d.top.filled",
             title: "带壳截图",
             description: "让截图娱乐化",
             color: Color(red: 0.3, green: 0.68, blue: 1.0)
-        ),
-        ToolItem(
-            icon: "slider.horizontal.3",
-            title: "滤镜特效",
-            description: "多种风格滤镜",
-            color: Color(red: 1.0, green: 0.44, blue: 0.66)
         ),
         ToolItem(
             icon: "environments.slash.circle",
@@ -95,10 +76,10 @@ struct ToolsView: View {
             color: Color(red: 0.98, green: 0.36, blue: 0.53)
         ),
         ToolItem(
-            icon: "sparkles",
-            title: "美颜美化",
-            description: "智能人像优化",
-            color: Color(red: 1.0, green: 0.73, blue: 0.10)
+            icon: "crop",
+            title: "图片裁切",
+            description: "多比例模版裁切",
+            color: Color(red: 0.55, green: 0.47, blue: 0.95)
         )
     ]
     
@@ -158,12 +139,8 @@ struct ToolsView: View {
                     ImageEnhancementView()
                 case .framedScreenshot:
                     FramedScreenshotView()
-                case .creativeNineGrid:
-                    CreativeNineGridView()
                 case .documentScanning:
                     DocumentScannerFeatureView()
-                case .photoScanning:
-                    PhotoScannerFeatureView()
                 case .backgroundRemoval:
                     BackgroundRemovalView()
                 case .imageStitching:
@@ -174,6 +151,8 @@ struct ToolsView: View {
                     PoseDetectionView()
                 case .safeCode:
                     SafeCodeView()
+                case .imageCrop:
+                    ImageCropView()
                 }
             }
             .onChange(of: navigationPath) { _, newValue in
@@ -193,20 +172,18 @@ struct ToolsView: View {
             navigationPath.append(.imageStitching)
         case "带壳截图":
             navigationPath.append(.framedScreenshot)
-        case "创意九宫格":
-            navigationPath.append(.creativeNineGrid)
         case "传统抠图":
             navigationPath.append(.backgroundRemoval)
         case "文档扫描":
             navigationPath.append(.documentScanning)
-        case "照片扫描":
-            navigationPath.append(.photoScanning)
         case "实景识别":
             navigationPath.append(.realTimeRecognition)
         case "姿态检测":
             navigationPath.append(.poseDetection)
         case "码住安全":
             navigationPath.append(.safeCode)
+        case "图片裁切":
+            navigationPath.append(.imageCrop)
         default:
             break
         }
