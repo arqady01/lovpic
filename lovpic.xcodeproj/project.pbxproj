@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CF08F9052F1EA37B008FF206 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F9042F1EA37B008FF206 /* Auth */; };
+		CF08F9072F1EA37B008FF206 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F9062F1EA37B008FF206 /* Functions */; };
+		CF08F9092F1EA37B008FF206 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F9082F1EA37B008FF206 /* PostgREST */; };
+		CF08F90B2F1EA37B008FF206 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F90A2F1EA37B008FF206 /* Realtime */; };
+		CF08F90D2F1EA37B008FF206 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F90C2F1EA37B008FF206 /* Storage */; };
+		CF08F9122F1EA40F008FF206 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CF08F9112F1EA40F008FF206 /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CFD94C8E2E9E86FB008EC8DF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +61,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CF08F9092F1EA37B008FF206 /* PostgREST in Frameworks */,
+				CF08F9072F1EA37B008FF206 /* Functions in Frameworks */,
+				CF08F9122F1EA40F008FF206 /* Supabase in Frameworks */,
+				CF08F9052F1EA37B008FF206 /* Auth in Frameworks */,
+				CF08F90D2F1EA37B008FF206 /* Storage in Frameworks */,
+				CF08F90B2F1EA37B008FF206 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +87,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		CF08F90E2F1EA401008FF206 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		CFD94C752E9E86FA008EC8DF = {
 			isa = PBXGroup;
 			children = (
 				CFD94C802E9E86FA008EC8DF /* lovpic */,
 				CFD94C902E9E86FB008EC8DF /* lovpicTests */,
 				CFD94C9A2E9E86FB008EC8DF /* lovpicUITests */,
+				CF08F90E2F1EA401008FF206 /* Frameworks */,
 				CFD94C7F2E9E86FA008EC8DF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +135,12 @@
 			);
 			name = lovpic;
 			packageProductDependencies = (
+				CF08F9042F1EA37B008FF206 /* Auth */,
+				CF08F9062F1EA37B008FF206 /* Functions */,
+				CF08F9082F1EA37B008FF206 /* PostgREST */,
+				CF08F90A2F1EA37B008FF206 /* Realtime */,
+				CF08F90C2F1EA37B008FF206 /* Storage */,
+				CF08F9112F1EA40F008FF206 /* Supabase */,
 			);
 			productName = lovpic;
 			productReference = CFD94C7E2E9E86FA008EC8DF /* lovpic.app */;
@@ -195,6 +224,9 @@
 			);
 			mainGroup = CFD94C752E9E86FA008EC8DF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CFD94C7F2E9E86FA008EC8DF /* Products */;
 			projectDirPath = "";
@@ -408,7 +440,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -440,7 +472,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -566,6 +598,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CF08F9042F1EA37B008FF206 /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		CF08F9062F1EA37B008FF206 /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		CF08F9082F1EA37B008FF206 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		CF08F90A2F1EA37B008FF206 /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		CF08F90C2F1EA37B008FF206 /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		CF08F9112F1EA40F008FF206 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFD47BA32F1EA2520097439F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CFD94C762E9E86FA008EC8DF /* Project object */;
 }
