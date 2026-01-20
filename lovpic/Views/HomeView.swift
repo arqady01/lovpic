@@ -105,9 +105,14 @@ struct HomeView: View {
                 }
             }
             .navigationDestination(for: FeatureDestination.self) { destination in
-                FeaturePlaceholderView(title: destination.title)
-                    .navigationTitle(destination.title)
-                    .navigationBarTitleDisplayMode(.inline)
+                switch destination {
+                case .textToImage:
+                    TextToImageView()
+                case .placeholder(let title):
+                    FeaturePlaceholderView(title: title)
+                        .navigationTitle(title)
+                        .navigationBarTitleDisplayMode(.inline)
+                }
             }
         }
         .onChange(of: navigationPath) { _, newValue in
@@ -137,15 +142,19 @@ struct HomeView: View {
     }
 
     private func openBanner(_ banner: BannerItem) {
-        navigationPath.append(FeatureDestination(title: banner.title))
+        navigationPath.append(FeatureDestination.placeholder(title: banner.title))
     }
 
     private func openShortcut(_ shortcut: ToolShortcutItem) {
-        navigationPath.append(FeatureDestination(title: shortcut.title))
+        if shortcut.title == "文生图" {
+            navigationPath.append(FeatureDestination.textToImage)
+        } else {
+            navigationPath.append(FeatureDestination.placeholder(title: shortcut.title))
+        }
     }
     
     private func openTemplate(_ template: HotTemplateItem) {
-        navigationPath.append(FeatureDestination(title: template.title))
+        navigationPath.append(FeatureDestination.placeholder(title: template.title))
     }
 }
 
@@ -608,9 +617,16 @@ private struct ShortcutBadge {
     let foreground: Color
 }
 
-private struct FeatureDestination: Identifiable, Hashable {
-    let id = UUID()
-    let title: String
+enum FeatureDestination: Hashable {
+    case textToImage
+    case placeholder(title: String)
+    
+    var title: String {
+        switch self {
+        case .textToImage: return "文生图"
+        case .placeholder(let title): return title
+        }
+    }
 }
 
 private struct FeaturePlaceholderView: View {
