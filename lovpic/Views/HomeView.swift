@@ -108,6 +108,8 @@ struct HomeView: View {
                 switch destination {
                 case .textToImage:
                     TextToImageView()
+                case .imageEdit:
+                    ImageEditView()
                 case .placeholder(let title):
                     FeaturePlaceholderView(title: title)
                         .navigationTitle(title)
@@ -146,9 +148,12 @@ struct HomeView: View {
     }
 
     private func openShortcut(_ shortcut: ToolShortcutItem) {
-        if shortcut.title == "文生图" {
+        switch shortcut.title {
+        case "文生图":
             navigationPath.append(FeatureDestination.textToImage)
-        } else {
+        case "图片编辑":
+            navigationPath.append(FeatureDestination.imageEdit)
+        default:
             navigationPath.append(FeatureDestination.placeholder(title: shortcut.title))
         }
     }
@@ -425,7 +430,7 @@ private struct QuickActionsSection: View {
             accent: Color.white,
             badge: ShortcutBadge(text: "自媒体", background: Color(red: 0.98, green: 0.32, blue: 0.36), foreground: .white)
         ),
-        ToolShortcutItem(title: "无损改尺寸", icon: "arrow.up.left.and.arrow.down.right", accent: Color.white, badge: nil),
+        ToolShortcutItem(title: "图片编辑", icon: "paintbrush.fill", accent: Color.white, badge: ShortcutBadge(text: "AI", background: Color(red: 0.96, green: 0.51, blue: 0.12), foreground: .white)),
         ToolShortcutItem(title: "AI Logo", icon: "l.square.fill", accent: Color.white, badge: nil),
         ToolShortcutItem(title: "人像背景", icon: "person.crop.rectangle", accent: Color.white, badge: nil)
     ]
@@ -619,11 +624,13 @@ private struct ShortcutBadge {
 
 enum FeatureDestination: Hashable {
     case textToImage
+    case imageEdit
     case placeholder(title: String)
     
     var title: String {
         switch self {
         case .textToImage: return "文生图"
+        case .imageEdit: return "图片编辑"
         case .placeholder(let title): return title
         }
     }

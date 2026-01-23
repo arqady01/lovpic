@@ -2,7 +2,7 @@
 //  TextToImageView.swift
 //  lovpic
 //
-//  文生图功能视图
+//  文生图功能视图 - Soft UI Evolution 主题
 //
 
 import SwiftUI
@@ -12,48 +12,74 @@ struct TextToImageView: View {
     @StateObject private var viewModel = TextToImageViewModel()
     @FocusState private var isPromptFocused: Bool
     
-    private let backgroundGradient = [
-        Color(red: 0.07, green: 0.07, blue: 0.09),
-        Color(red: 0.12, green: 0.11, blue: 0.15)
-    ]
+    // Soft UI Evolution 配色
+    private let backgroundColor = Color(hex: "F5F5F7")
+    private let cardColor = Color.white
+    private let primaryColor = Color(hex: "3B82F6")
+    private let accentColor = Color(hex: "F97316")
+    private let textColor = Color(hex: "1D1D1F")
+    private let secondaryTextColor = Color(hex: "6B7280")
+    private let borderColor = Color(hex: "E5E7EB")
     
     var body: some View {
         ZStack {
             // 背景
-            LinearGradient(colors: backgroundGradient, startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            backgroundColor.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     // 提示词输入区
                     PromptInputSection(
                         prompt: $viewModel.prompt,
-                        isFocused: $isPromptFocused
+                        isFocused: $isPromptFocused,
+                        primaryColor: primaryColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        cardColor: cardColor,
+                        borderColor: borderColor
                     )
                     
                     // 模型选择
                     if !viewModel.configs.isEmpty {
                         ModelSelectionSection(
                             configs: viewModel.configs,
-                            selectedConfig: $viewModel.selectedConfig
+                            selectedConfig: $viewModel.selectedConfig,
+                            primaryColor: primaryColor,
+                            textColor: textColor,
+                            cardColor: cardColor,
+                            borderColor: borderColor
                         )
                     }
                     
                     // 参数设置
                     if viewModel.selectedConfig != nil {
-                        ParameterSection(viewModel: viewModel)
+                        ParameterSection(
+                            viewModel: viewModel,
+                            primaryColor: primaryColor,
+                            textColor: textColor,
+                            secondaryTextColor: secondaryTextColor,
+                            cardColor: cardColor,
+                            borderColor: borderColor
+                        )
                     }
                     
                     // 生成按钮
                     GenerateButton(
                         isLoading: viewModel.isGenerating,
                         isDisabled: viewModel.prompt.isEmpty || viewModel.selectedConfig == nil,
+                        primaryColor: primaryColor,
+                        accentColor: accentColor,
                         action: { Task { await viewModel.generate() } }
                     )
                     
                     // 生成结果
                     if let imageUrl = viewModel.generatedImageUrl {
-                        GeneratedImageSection(imageUrl: imageUrl)
+                        GeneratedImageSection(
+                            imageUrl: imageUrl,
+                            primaryColor: primaryColor,
+                            textColor: textColor,
+                            cardColor: cardColor
+                        )
                     }
                     
                     // 错误提示
@@ -68,7 +94,8 @@ struct TextToImageView: View {
         }
         .navigationTitle("文生图")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(backgroundColor, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .task {
             await viewModel.loadConfigs()
         }
@@ -101,7 +128,8 @@ final class TextToImageViewModel: ObservableObject {
     
     func loadConfigs() async {
         await AIImageService.shared.fetchConfigs()
-        configs = AIImageService.shared.configs
+        // 使用新的板块过滤方法获取文生图模型
+        configs = AIImageService.shared.configs(for: .textToImage)
         if selectedConfig == nil {
             selectedConfig = configs.first
         }
@@ -148,31 +176,37 @@ final class TextToImageViewModel: ObservableObject {
 private struct PromptInputSection: View {
     @Binding var prompt: String
     var isFocused: FocusState<Bool>.Binding
+    let primaryColor: Color
+    let textColor: Color
+    let secondaryTextColor: Color
+    let cardColor: Color
+    let borderColor: Color
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("描述你想要的图片", systemImage: "text.bubble.fill")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(textColor)
             
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(cardColor)
+                    .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(isFocused.wrappedValue ? Color.cyan.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(isFocused.wrappedValue ? primaryColor : borderColor, lineWidth: isFocused.wrappedValue ? 2 : 1)
                     )
                 
                 if prompt.isEmpty {
                     Text("例如：一只金色的猫咪趴在阳光下的草地上，毛发柔软蓬松，眼神慵懒...")
                         .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.35))
+                        .foregroundColor(secondaryTextColor.opacity(0.6))
                         .padding(16)
                 }
                 
                 TextEditor(text: $prompt)
                     .font(.system(size: 15))
-                    .foregroundColor(.white)
+                    .foregroundColor(textColor)
                     .scrollContentBackground(.hidden)
                     .padding(12)
                     .focused(isFocused)
@@ -183,7 +217,7 @@ private struct PromptInputSection: View {
                 Spacer()
                 Text("\(prompt.count)/300")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(secondaryTextColor)
             }
         }
     }
@@ -194,12 +228,16 @@ private struct PromptInputSection: View {
 private struct ModelSelectionSection: View {
     let configs: [AIProviderConfig]
     @Binding var selectedConfig: AIProviderConfig?
+    let primaryColor: Color
+    let textColor: Color
+    let cardColor: Color
+    let borderColor: Color
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("选择模型", systemImage: "cpu.fill")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(textColor)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -207,6 +245,10 @@ private struct ModelSelectionSection: View {
                         ModelCard(
                             config: config,
                             isSelected: selectedConfig?.id == config.id,
+                            primaryColor: primaryColor,
+                            textColor: textColor,
+                            cardColor: cardColor,
+                            borderColor: borderColor,
                             onSelect: { selectedConfig = config }
                         )
                     }
@@ -221,6 +263,10 @@ private struct ModelSelectionSection: View {
 private struct ModelCard: View {
     let config: AIProviderConfig
     let isSelected: Bool
+    let primaryColor: Color
+    let textColor: Color
+    let cardColor: Color
+    let borderColor: Color
     let onSelect: () -> Void
     
     var body: some View {
@@ -228,28 +274,29 @@ private struct ModelCard: View {
             HStack {
                 Text(config.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(isSelected ? .white : textColor)
                     .lineLimit(1)
                 
                 Spacer()
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.cyan)
+                        .foregroundColor(.white)
                 }
             }
             .padding(14)
             .frame(width: 160)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white.opacity(isSelected ? 0.12 : 0.06))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(isSelected ? Color.cyan.opacity(0.5) : Color.white.opacity(0.08), lineWidth: 1)
-                    )
+                    .fill(isSelected ? primaryColor : cardColor)
+                    .shadow(color: isSelected ? primaryColor.opacity(0.3) : Color.black.opacity(0.06), radius: isSelected ? 8 : 6, x: 0, y: 3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? Color.clear : borderColor, lineWidth: 1)
             )
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(SoftButtonStyle())
     }
 }
 
@@ -257,26 +304,37 @@ private struct ModelCard: View {
 
 private struct ParameterSection: View {
     @ObservedObject var viewModel: TextToImageViewModel
+    let primaryColor: Color
+    let textColor: Color
+    let secondaryTextColor: Color
+    let cardColor: Color
+    let borderColor: Color
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("参数设置", systemImage: "slider.horizontal.3")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(textColor)
             
             VStack(spacing: 16) {
                 if viewModel.selectedConfig?.provider == .kie {
                     ParameterPicker(
                         title: "宽高比",
                         selection: $viewModel.aspectRatio,
-                        options: viewModel.aspectRatioOptions
+                        options: viewModel.aspectRatioOptions,
+                        primaryColor: primaryColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor
                     )
                     
                     ParameterPicker(
                         title: "质量",
                         selection: $viewModel.quality,
                         options: viewModel.qualityOptions,
-                        labels: ["基础 2K", "高清 4K"]
+                        labels: ["基础 2K", "高清 4K"],
+                        primaryColor: primaryColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor
                     )
                 }
                 
@@ -284,21 +342,24 @@ private struct ParameterSection: View {
                     ParameterPicker(
                         title: "分辨率",
                         selection: $viewModel.size,
-                        options: viewModel.sizeOptions
+                        options: viewModel.sizeOptions,
+                        primaryColor: primaryColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor
                     )
                     
                     Toggle(isOn: $viewModel.watermark) {
                         Text("添加水印")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(textColor)
                     }
-                    .tint(.cyan)
+                    .tint(primaryColor)
                 }
                 
                 if viewModel.selectedConfig?.provider == .modelscope {
                     Text("该模型暂无可调参数")
                         .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(secondaryTextColor)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 8)
                 }
@@ -306,7 +367,8 @@ private struct ParameterSection: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(cardColor)
+                    .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
             )
         }
     }
@@ -317,12 +379,15 @@ private struct ParameterPicker: View {
     @Binding var selection: String
     let options: [String]
     var labels: [String]? = nil
+    let primaryColor: Color
+    let textColor: Color
+    let secondaryTextColor: Color
     
     var body: some View {
         HStack {
             Text(title)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(textColor)
             
             Spacer()
             
@@ -332,12 +397,12 @@ private struct ParameterPicker: View {
                     Button(action: { selection = option }) {
                         Text(label)
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(selection == option ? .black : .white.opacity(0.7))
+                            .foregroundColor(selection == option ? .white : secondaryTextColor)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(selection == option ? Color.cyan : Color.white.opacity(0.1))
+                                    .fill(selection == option ? primaryColor : Color(hex: "F3F4F6"))
                             )
                     }
                     .buttonStyle(.plain)
@@ -352,6 +417,8 @@ private struct ParameterPicker: View {
 private struct GenerateButton: View {
     let isLoading: Bool
     let isDisabled: Bool
+    let primaryColor: Color
+    let accentColor: Color
     let action: () -> Void
     
     var body: some View {
@@ -359,7 +426,7 @@ private struct GenerateButton: View {
             HStack(spacing: 10) {
                 if isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(0.9)
                 } else {
                     Image(systemName: "wand.and.stars")
@@ -369,21 +436,17 @@ private struct GenerateButton: View {
                 Text(isLoading ? "生成中..." : "开始生成")
                     .font(.system(size: 16, weight: .bold))
             }
-            .foregroundColor(.black)
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
             .background(
-                LinearGradient(
-                    colors: isDisabled ? [Color.gray.opacity(0.3)] : [Color.cyan, Color.cyan.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isDisabled ? Color.gray.opacity(0.4) : accentColor)
+                    .shadow(color: isDisabled ? .clear : accentColor.opacity(0.4), radius: 12, x: 0, y: 6)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: isDisabled ? .clear : Color.cyan.opacity(0.4), radius: 12, x: 0, y: 6)
         }
         .disabled(isDisabled || isLoading)
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(SoftButtonStyle())
     }
 }
 
@@ -391,6 +454,9 @@ private struct GenerateButton: View {
 
 private struct GeneratedImageSection: View {
     let imageUrl: String
+    let primaryColor: Color
+    let textColor: Color
+    let cardColor: Color
     @State private var showShareSheet = false
     
     var body: some View {
@@ -398,14 +464,14 @@ private struct GeneratedImageSection: View {
             HStack {
                 Label("生成结果", systemImage: "photo.fill")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(textColor)
                 
                 Spacer()
                 
                 Button(action: { showShareSheet = true }) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.cyan)
+                        .foregroundColor(primaryColor)
                 }
             }
             
@@ -413,21 +479,23 @@ private struct GeneratedImageSection: View {
                 switch phase {
                 case .empty:
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(cardColor)
                         .frame(height: 300)
-                        .overlay(ProgressView())
+                        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+                        .overlay(ProgressView().tint(primaryColor))
                     
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .black.opacity(0.3), radius: 16, x: 0, y: 8)
+                        .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 8)
                     
                 case .failure:
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(cardColor)
                         .frame(height: 200)
+                        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
                         .overlay(
                             VStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle")
@@ -435,7 +503,7 @@ private struct GeneratedImageSection: View {
                                 Text("图片加载失败")
                                     .font(.system(size: 14))
                             }
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(Color(hex: "6B7280"))
                         )
                     
                 @unknown default:
@@ -454,33 +522,33 @@ private struct ErrorBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.circle.fill")
-                .foregroundColor(.red)
+                .foregroundColor(Color(hex: "EF4444"))
             
             Text(message)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(Color(hex: "1D1D1F"))
             
             Spacer()
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.red.opacity(0.15))
+                .fill(Color(hex: "FEF2F2"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                        .stroke(Color(hex: "FECACA"), lineWidth: 1)
                 )
         )
     }
 }
 
-// MARK: - 按钮样式
+// MARK: - Soft UI 按钮样式
 
-private struct ScaleButtonStyle: ButtonStyle {
+private struct SoftButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
-            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }

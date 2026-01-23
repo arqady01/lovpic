@@ -25,29 +25,29 @@ enum AIProvider: String, Codable, CaseIterable {
     }
 }
 
-/// 模型类型
-enum AIModelType: String, Codable {
-    case textToImage = "text-to-image"
-    case imageEdit = "image-edit"
-    case removeBackground = "remove-background"
-    case imageGeneration = "image-generation"
+/// 输入类型（决定模型能否出现在某板块）
+enum AIInputType: String, Codable {
+    case textOnly = "text-only"           // 仅需文字输入
+    case imageRequired = "image-required" // 必须提供图片
+    case imageOptional = "image-optional" // 图片可选（两栖模型）
     
     var displayName: String {
         switch self {
-        case .textToImage: return "文生图"
-        case .imageEdit: return "图片编辑"
-        case .removeBackground: return "背景移除"
-        case .imageGeneration: return "图片生成"
+        case .textOnly: return "仅文字"
+        case .imageRequired: return "需要图片"
+        case .imageOptional: return "图片可选"
         }
     }
-    
-    /// 是否需要输入图片
-    var requiresImage: Bool {
-        switch self {
-        case .textToImage: return false
-        case .imageEdit, .removeBackground, .imageGeneration: return true
-        }
-    }
+}
+
+/// 功能板块类型
+enum FeatureSection: String {
+    case textToImage = "text-to-image"
+    case imageEdit = "image-edit"
+    case logoGeneration = "logo"
+    case backgroundRemoval = "background-removal"
+    case avatarGeneration = "avatar"
+    case posterGeneration = "poster"
 }
 
 /// AI 提供商配置
@@ -57,33 +57,28 @@ struct AIProviderConfig: Codable, Identifiable {
     let provider: AIProvider
     let baseUrl: String
     let modelId: String
-    let modelType: AIModelType?
+    let inputType: AIInputType
+    let category: String
     let isActive: Bool
     let createdAt: Date
     
     enum CodingKeys: String, CodingKey {
-        case id, name, provider
+        case id, name, provider, category
         case baseUrl = "base_url"
         case modelId = "model_id"
-        case modelType = "model_type"
+        case inputType = "input_type"
         case isActive = "is_active"
         case createdAt = "created_at"
     }
     
-    /// 根据 model_id 推断模型类型
-    var effectiveModelType: AIModelType {
-        if let modelType = modelType {
-            return modelType
-        }
-        // 根据 model_id 推断
-        if modelId.contains("remove-background") {
-            return .removeBackground
-        } else if modelId.contains("edit") {
-            return .imageEdit
-        } else if modelId == "nano-banana-pro" {
-            return .imageGeneration
-        }
-        return .textToImage
+    /// 是否适用于文生图板块
+    var supportsTextToImage: Bool {
+        inputType == .textOnly || inputType == .imageOptional
+    }
+    
+    /// 是否适用于图片编辑板块
+    var supportsImageEdit: Bool {
+        inputType == .imageRequired || inputType == .imageOptional
     }
 }
 
@@ -322,9 +317,25 @@ final class AIImageService: ObservableObject {
         configs.filter { $0.provider == provider }
     }
     
-    /// 根据模型类型获取配置
-    func configs(for modelType: AIModelType) -> [AIProviderConfig] {
-        configs.filter { $0.effectiveModelType == modelType }
+    /// 根据功能板块获取配置（核心方法）
+    func configs(for section: FeatureSection) -> [AIProviderConfig] {
+        switch section {
+        case .textToImage:
+            // 文生图板块：不需要图片输入 + 通用分类
+            return configs.filter { 
+                $0.supportsTextToImage && $0.category == "general" 
+            }
+            
+        case .imageEdit:
+            // 图片编辑板块：需要或支持图片输入 + 通用分类
+            return configs.filter { 
+                $0.supportsImageEdit && $0.category == "general" 
+            }
+            
+        case .logoGeneration, .backgroundRemoval, .avatarGeneration, .posterGeneration:
+            // 专用板块：直接按 category 过滤
+            return configs.filter { $0.category == section.rawValue }
+        }
     }
     
     // MARK: - Private
